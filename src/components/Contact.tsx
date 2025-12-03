@@ -1,3 +1,5 @@
+// src/pages/Contact.tsx
+
 import { useState, useEffect } from 'react';
 import { Send, MessageCircle, Loader2, MapPin, Phone, Mail } from 'lucide-react';
 import { leadService } from '../services/leadService';
@@ -6,7 +8,7 @@ import { Course } from '../types';
 import { toast } from 'sonner';
 import DOMPurify from 'dompurify';
 
-// Sanitização
+// Sanitização local (opcional, pois o service já faz, mas mal não faz)
 function sanitizeInput(dirtyString: string): string {
     return DOMPurify.sanitize(dirtyString);
 }
@@ -15,7 +17,7 @@ export function Contact() {
     const [formData, setFormData] = useState({
         name: '',
         phone: '',
-        whatsapp: true, // <--- CORRIGIDO (boolean)
+        whatsapp: true,
         course: '',
         contactTime: ''
     });
@@ -43,10 +45,11 @@ export function Contact() {
     const handleChange = (
         e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
     ) => {
-        const { name, value, type, checked } = e.target;
+        const { name, value, type } = e.target;
+        // Checkbox precisa de tratamento especial no TS
+        const checked = (e.target as HTMLInputElement).checked;
 
-        const sanitizedValue =
-            name === "name" ? sanitizeInput(value) : value;
+        const sanitizedValue = name === "name" ? sanitizeInput(value) : value;
 
         setFormData(prev => ({
             ...prev,
@@ -59,6 +62,7 @@ export function Contact() {
         setLoading(true);
 
         try {
+            // Validação simples
             if (!formData.name || !formData.phone || !formData.course) {
                 toast.error("Por favor, preencha nome, telefone e o curso de interesse.");
                 setLoading(false);
@@ -67,20 +71,37 @@ export function Contact() {
 
             const phoneValue = formData.phone || '';
 
-            const sanitizedData = {
-                ...formData,
-                name: sanitizeInput(formData.name),
-                phone: phoneValue.replace(/\D/g, "") // <--- regex corrigida
+            // --- CORREÇÃO AQUI ---
+            // Mapeamos os nomes do formulário (course, contactTime) 
+            // para os nomes que o Banco de Dados/Service esperam (curso_interesse, horario_interesse)
+            const payloadToSend = {
+                nome: sanitizeInput(formData.name),
+                telefone: phoneValue.replace(/\D/g, ""), // Remove tudo que não é número
+                curso_interesse: sanitizeInput(formData.course),
+                horario_interesse: sanitizeInput(formData.contactTime || "Não informado")
             };
 
-            await leadService.create(sanitizedData);
+            // Envia para o banco de dados
+            await leadService.create(payloadToSend);
 
             toast.success("Dados salvos com sucesso! Redirecionando para o WhatsApp...");
 
-            const whatsappMessage = `Olá, meu nome é ${sanitizedData.name}, gostaria de saber mais sobre o curso de ${sanitizedData.course}. Meu telefone é ${sanitizedData.phone}.`;
+            // Gera link do WhatsApp e redireciona
+            const whatsappMessage = `Olá, meu nome é ${payloadToSend.nome}, gostaria de saber mais sobre o curso de ${payloadToSend.curso_interesse}. Meu telefone é ${formData.phone}.`;
             const whatsappUrl = `https://wa.me/5538988630487?text=${encodeURIComponent(whatsappMessage)}`;
 
-            window.open(whatsappUrl, '_blank');
+            // Pequeno delay para garantir que o toast apareça antes de abrir a nova aba
+            setTimeout(() => {
+                window.open(whatsappUrl, '_blank');
+                // Limpa o formulário após o envio bem-sucedido
+                setFormData({
+                    name: '',
+                    phone: '',
+                    whatsapp: true,
+                    course: '',
+                    contactTime: ''
+                });
+            }, 1000);
 
         } catch (error) {
             console.error("Erro ao salvar lead:", error);
@@ -90,6 +111,7 @@ export function Contact() {
         }
     };
 
+    // Estilos (mantidos)
     const sectionClasses = "py-20 bg-gray-900 text-white";
     const cardClasses = "bg-white p-8 lg:p-12 rounded-xl shadow-2xl";
     const titleClasses = "text-3xl lg:text-4xl font-bold text-gray-900 mb-6";

@@ -1,10 +1,10 @@
 // src/services/leadService.ts
 import { supabase } from '../lib/supabaseClient';
 import { Lead } from '../types'; 
-import DOMPurify from 'dompurify'; // 👈 IMPORTADO PARA SANITIZAÇÃO DE DADOS (XSS)
+import DOMPurify from 'dompurify'; 
 
 // Tipo para o dado a ser inserido (sem ID e data)
-interface LeadPayload {
+export interface LeadPayload {
     nome: string;
     telefone: string;
     curso_interesse: string;
@@ -13,11 +13,9 @@ interface LeadPayload {
 
 /**
  * Função de segurança para remover códigos HTML e scripts maliciosos (XSS).
- * @param dirtyString A string de entrada com potencial código malicioso.
- * @returns A string limpa e segura.
  */
 function sanitizeInput(dirtyString: string): string {
-    // Retorna a string limpa, permitindo apenas texto puro.
+    if (!dirtyString) return "";
     return DOMPurify.sanitize(dirtyString);
 }
 
@@ -29,7 +27,7 @@ export const leadService = {
      */
     async create(payload: LeadPayload) {
         
-        // 1. SANITIZAÇÃO DE DADOS: Limpa cada campo antes de enviar (XSS/SQL Injection)
+        // 1. SANITIZAÇÃO DE DADOS e Fallback de erro
         const sanitizedPayload = {
             nome: sanitizeInput(payload.nome),
             telefone: sanitizeInput(payload.telefone),
@@ -37,7 +35,7 @@ export const leadService = {
             horario_interesse: sanitizeInput(payload.horario_interesse),
         };
 
-        // 2. Chamada da Função RPC com os dados sanitizados
+        // 2. Chamada da Função RPC
         const { data, error } = await supabase.rpc('submit_lead', {
             // Nomes dos parâmetros da função SQL:
             nome_lead: sanitizedPayload.nome,
@@ -72,9 +70,7 @@ export const leadService = {
     },
 
     /**
-     * Atualiza o status 'contatado' de um lead específico (para uso no Admin).
-     * @param id ID do lead.
-     * @param contatado Novo status (true/false).
+     * Atualiza o status 'contatado' de um lead específico.
      */
     async updateContatado(id: string, contatado: boolean) {
         const { data, error } = await supabase
@@ -84,11 +80,7 @@ export const leadService = {
             .select() 
             .single(); 
             
-
         if (error) throw new Error('Erro ao atualizar lead: ' + error.message);
         return data as Lead;
     }
-    
-    // NOTA: Outras funções do serviço (como bannerService ou courseService)
-    // devem ser corrigidas seguindo o mesmo padrão de usar .select() em UPDATEs.
 };

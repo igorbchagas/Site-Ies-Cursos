@@ -1,13 +1,13 @@
 // src/pages/admin/AdminLeads.tsx
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Users, Phone, Clock, Layers, MessageCircle, CheckCircle, XCircle, Loader2,ExternalLink } from "lucide-react";
+import { Users, Phone, Clock, Layers, MessageCircle, CheckCircle, XCircle, Loader2, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
 import { leadService } from "../../services/leadService";
 import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 
-// Crie esta interface no seu arquivo types.ts
+// Interface local (ou pode importar do types.ts se preferir)
 interface Lead {
     id: string;
     nome: string;
@@ -19,7 +19,7 @@ interface Lead {
 }
 
 // ------------------------
-// MODAL DE VISUALIZAÇÃO E WHATSAPP (ATUALIZADO)
+// MODAL DE VISUALIZAÇÃO E WHATSAPP
 // ------------------------
 
 interface LeadModalProps {
@@ -40,7 +40,6 @@ function LeadModal({ lead, onClose, onMarkContatado }: LeadModalProps) {
         return `https://wa.me/55${numero}?text=${msg}`;
     };
     
-    // Função para formatar a data
     const formatDate = (dateString: string) => {
         return new Date(dateString).toLocaleDateString('pt-BR', {
             day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit'
@@ -49,7 +48,6 @@ function LeadModal({ lead, onClose, onMarkContatado }: LeadModalProps) {
 
     return createPortal(
         <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
-            {/* Overlay Escuro com Animação Premium */}
             <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
@@ -57,12 +55,11 @@ function LeadModal({ lead, onClose, onMarkContatado }: LeadModalProps) {
                 onClick={onClose}
                 className="absolute inset-0 bg-black/80 backdrop-blur-sm"
             />
-            {/* Modal Principal com Animação Premium */}
             <motion.div
-                initial={{ opacity: 0, y: 15 }} // Posição inicial mais sutil
-                animate={{ opacity: 1, y: 0 }} // Posição final
+                initial={{ opacity: 0, y: 15 }}
+                animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: 15 }}
-                transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }} // Curva de aceleração/desaceleração premium
+                transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
                 className="relative bg-zinc-900 border border-zinc-700 rounded-xl p-6 w-full max-w-lg shadow-2xl z-10"
             >
                 <div className="flex items-center justify-between border-b border-zinc-800 pb-3 mb-4">
@@ -75,13 +72,11 @@ function LeadModal({ lead, onClose, onMarkContatado }: LeadModalProps) {
                 </div>
                 
                 <div className="space-y-4">
-                    {/* Linha 1: Nome do Lead (Aprimorado) */}
                     <div className="p-3 bg-zinc-950 rounded-lg border border-zinc-700">
                         <p className="text-xs text-zinc-400">Nome do Lead</p>
                         <p className="font-bold text-white text-lg">{lead.nome}</p>
                     </div>
 
-                    {/* Linha 2: Telefone e Registro */}
                     <div className="grid grid-cols-2 gap-3">
                         <div className="flex flex-col gap-1 p-3 bg-zinc-950 rounded-lg border border-zinc-700">
                             <p className="text-xs text-zinc-400 flex items-center gap-1"><Phone size={14} className="text-green-500" /> Telefone</p>
@@ -93,7 +88,6 @@ function LeadModal({ lead, onClose, onMarkContatado }: LeadModalProps) {
                         </div>
                     </div>
                     
-                    {/* Linha 3: Curso de Interesse */}
                     <div className="flex flex-col gap-1 p-3 bg-zinc-950 rounded-lg border border-zinc-700">
                         <p className="text-xs text-zinc-400 flex items-center gap-1"><Layers size={14} className="text-orange-400" /> Curso de Interesse</p>
                         <p className="font-bold text-white">
@@ -104,7 +98,6 @@ function LeadModal({ lead, onClose, onMarkContatado }: LeadModalProps) {
                 </div>
 
                 <div className="flex justify-between items-center mt-6 pt-4 border-t border-zinc-800">
-                    {/* Botão Marcar Contatado (Design Aprimorado) */}
                     <button 
                         onClick={() => onMarkContatado(lead.id, !lead.contatado)}
                         className={`text-xs font-semibold px-4 py-2 rounded-lg transition-colors flex items-center gap-2 ${
@@ -117,7 +110,6 @@ function LeadModal({ lead, onClose, onMarkContatado }: LeadModalProps) {
                         {lead.contatado ? 'Marcar como PENDENTE' : 'Marcar como CONTATADO'}
                     </button>
                     
-                    {/* Botão WhatsApp */}
                     <a
                         href={generateWhatsappLink()}
                         target="_blank"
@@ -195,7 +187,7 @@ export default function AdminLeads() {
             className="space-y-6"
         >
             {/* Cabeçalho */}
-                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
                 <div className="flex items-center gap-3">
                     <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-green-500 to-green-700 flex items-center justify-center shadow-lg shadow-green-500/20">
                         <Users size={18} className="text-white" />
@@ -208,12 +200,10 @@ export default function AdminLeads() {
                     </div>
                 </div>
 
-                {/* BOTÕES DE AÇÃO AGRUPADOS E ALINHADOS À DIREITA */}
                 <div className="flex flex-wrap gap-2 justify-end">
-                    
                     <button
                         type="button"
-                        onClick={() => navigate("/")} // Adicione o 'navigate' aqui, se ainda não estiver definido no escopo
+                        onClick={() => navigate("/")}
                         className="flex items-center gap-2 px-3 py-2 rounded-lg border border-zinc-700 text-xs text-zinc-200 hover:bg-zinc-800 transition-colors"
                     >
                         <ExternalLink size={14} />
