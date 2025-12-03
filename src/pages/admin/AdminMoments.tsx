@@ -239,7 +239,6 @@ export default function AdminMoments() {
         }
     };
     
-    // Reset dos erros de validação
     useEffect(() => { setErrorTitle(!newTitle.trim() && errorTitle); }, [newTitle, errorTitle]);
     useEffect(() => { setErrorDescription(!newDescription.trim() && errorDescription); }, [newDescription, errorDescription]);
     useEffect(() => { setErrorCategory(!newCategory && errorCategory); }, [newCategory, errorCategory]);
@@ -332,65 +331,59 @@ export default function AdminMoments() {
         }
     };
     
-    // --- FUNÇÃO DE DELETE CORRIGIDA COM MODAL ---
+    // --- FUNÇÃO DE DELETE REQUISITADA ---
     const requestDelete = (moment: MomentEvent) => {
         setMomentToDelete(moment);
     };
 
+    // --- FUNÇÃO DE DELETE CORRIGIDA E ROBUSTA ---
     const handleConfirmDelete = async () => { 
         if (!momentToDelete) return;
         setIsDeleting(true);
 
-        let storagePath = null;
-
-        // Tenta obter caminho do storage se for imagem
-        if (momentToDelete.type === 'image' && momentToDelete.src) {
-             try {
-                if (momentToDelete.src.includes(`/storage/v1/object/public/${BUCKET_NAME}/`)) {
+        try {
+            // 1. TENTA REMOVER DO STORAGE (Se for imagem)
+            // Lógica robusta: Pega tudo que estiver depois do nome do bucket na URL
+            if (momentToDelete.type === 'image' && momentToDelete.src) {
+                 try {
                     const parts = momentToDelete.src.split(`/${BUCKET_NAME}/`);
                     if (parts.length > 1) {
-                        storagePath = decodeURIComponent(parts[1]);
+                        const storagePath = decodeURIComponent(parts[1]);
+                        console.log("Tentando deletar do storage:", storagePath);
+                        
+                        const { error: storageError } = await supabase.storage
+                            .from(BUCKET_NAME) 
+                            .remove([storagePath]);
+
+                        if (storageError) {
+                            console.warn("Aviso: Falha ao remover do Storage (verifique as policies):", storageError.message);
+                        } else {
+                            console.log("Arquivo deletado do Storage com sucesso.");
+                        }
                     }
+                } catch (e) {
+                    console.error("Erro ao extrair caminho do storage:", e);
                 }
-            } catch (e) {
-                console.error("Erro ao analisar URL para exclusão:", e);
-                storagePath = null;
             }
-        }
-
-        // 1. Remove do Storage
-        if (storagePath) { 
-             try {
-                const { error: storageError } = await supabase.storage
-                    .from(BUCKET_NAME) 
-                    .remove([storagePath]);
-
-                if (storageError) {
-                    console.warn("Aviso: Falha ao remover arquivo do Storage:", storageError.message);
-                }
-             } catch (e) {
-                console.error("Erro no Supabase Storage durante a remoção:", e);
-             }
-        }
-        
-        try {
+            
             // 2. Remove do Banco
             await momentService.remove(momentToDelete.id);
             
             setMoments(prev => prev.filter(m => m.id !== momentToDelete.id));
             fetchStorageUsage(); 
             toast.success("Momento removido.");
+
         } catch (error) {
-            toast.error("Falha ao remover momento do banco de dados.");
+            console.error(error);
+            toast.error("Falha ao remover momento.");
         } finally {
             setIsDeleting(false);
-            setMomentToDelete(null); // Fecha o modal
+            setMomentToDelete(null); 
         }
     };
 
 
     return (
-        // Padding reduzido no mobile
         <div className={`space-y-6 p-4 md:p-8 bg-[${DARK_BACKGROUND}] rounded-xl text-[${TEXT_COLOR}]`}>
             {/* Título e cabeçalho */}
             <div className="flex items-center gap-3 mb-6">
@@ -412,7 +405,6 @@ export default function AdminMoments() {
                     <Upload size={16} style={{ color: ACCENT_COLOR }} /> 1. Escolha o tipo de Mídia
                 </h2>
                 
-                {/* Grid responsivo: col-1 no mobile, col-2 no desktop */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <button
                         onClick={() => handleSetUploadType('file')}
@@ -483,7 +475,6 @@ export default function AdminMoments() {
                         <Camera size={16} style={{ color: ACCENT_COLOR }} /> 2. Informações do Momento
                     </h2>
 
-                    {/* Grid responsivo: 1 coluna mobile, 3 colunas desktop */}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div className="flex flex-col gap-1">
                             <label className="text-xs font-semibold text-zinc-400 uppercase tracking-wide">Título (Obrigatório)</label>
@@ -576,9 +567,7 @@ export default function AdminMoments() {
 
                 {!loading && moments.length > 0 && (
                     <>
-                        {/* ======================= */}
-                        {/* MODO MOBILE: LISTA DE CARDS (Sem hover, botões visíveis) */}
-                        {/* ======================= */}
+                        {/* MODO MOBILE */}
                         <div className="md:hidden space-y-4">
                             {moments.map((moment) => (
                                 <div key={moment.id} className="bg-zinc-900 border border-zinc-800 rounded-lg overflow-hidden flex flex-col">
@@ -623,9 +612,7 @@ export default function AdminMoments() {
                             ))}
                         </div>
 
-                        {/* ======================= */}
-                        {/* MODO DESKTOP: GRID COM HOVER (Original) */}
-                        {/* ======================= */}
+                        {/* MODO DESKTOP */}
                         <div className="hidden md:grid grid-cols-3 lg:grid-cols-5 gap-4">
                             <AnimatePresence>
                                 {moments.map((moment) => (
@@ -685,7 +672,6 @@ export default function AdminMoments() {
                 )}
             </div>
 
-            {/* === RENDERIZAÇÃO DA MODAL NO FIM DA PÁGINA === */}
             <DeleteModal 
                 open={!!momentToDelete}
                 title="Excluir Momento"

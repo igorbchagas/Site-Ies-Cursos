@@ -37,6 +37,7 @@ export interface Banner {
   id: string;
   titulo?: string;
   imagem_url: string;
+  mobile_image?: string | null;
   ativo: boolean;
   ordem: number;
 }

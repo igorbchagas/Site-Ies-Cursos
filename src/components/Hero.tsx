@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { ArrowRight, Check, ChevronLeft, ChevronRight } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, PanInfo } from 'framer-motion';
 import { bannerService } from '../services/bannerService';
 import { Banner } from '../types';
 
@@ -19,19 +19,19 @@ export function Hero() {
         loadBanners();
     }, []);
 
-    // O total de slides é: 1 (Layout Padrão) + Quantidade de Banners
+    // Slide 0 (Padrão) + Banners do Banco
     const totalSlides = 1 + banners.length;
 
-    // Timer automático
+    // Timer automático (pausa se estiver arrastando/interagindo)
     useEffect(() => {
-        if (totalSlides <= 1) return; 
+        if (totalSlides <= 1) return;
         
         const interval = setInterval(() => {
             nextSlide();
-        }, 6000); // 6 segundos por slide
+        }, 6000); // 6 segundos
 
         return () => clearInterval(interval);
-    }, [totalSlides, currentIndex]); 
+    }, [totalSlides, currentIndex]);
 
     const nextSlide = () => {
         setCurrentIndex((prev) => (prev + 1) % totalSlides);
@@ -41,6 +41,21 @@ export function Hero() {
         setCurrentIndex((prev) => (prev - 1 + totalSlides) % totalSlides);
     };
 
+    // Lógica de SWIPE (Arrastar) para Mobile
+    const handleDragEnd = (event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
+        const offset = info.offset.x;
+        const velocity = info.velocity.x;
+
+        // Se arrastou muito para esquerda ou rápido -> Próximo
+        if (offset < -50 || velocity < -500) {
+            nextSlide();
+        } 
+        // Se arrastou muito para direita ou rápido -> Anterior
+        else if (offset > 50 || velocity > 500) {
+            prevSlide();
+        }
+    };
+
     const scrollToSection = (id: string) => {
         const element = document.getElementById(id);
         if (element) {
@@ -48,59 +63,81 @@ export function Hero() {
         }
     };
 
+    // Variantes da animação de slide
+    const slideVariants = {
+        enter: (direction: number) => ({
+            x: direction > 0 ? 1000 : -1000,
+            opacity: 0
+        }),
+        center: {
+            zIndex: 1,
+            x: 0,
+            opacity: 1
+        },
+        exit: (direction: number) => ({
+            zIndex: 0,
+            x: direction < 0 ? 1000 : -1000,
+            opacity: 0
+        })
+    };
+
     return (
-        // CORREÇÃO: pt-16 para mobile (64px) e pt-20 para desktop (80px)
-        <section id="hero" className="relative w-full overflow-hidden bg-black text-white pt-16 lg:pt-20"> 
-            {/* Container Principal que define a altura - Reduzi para 550px no mobile para caber melhor */}
-            <div className="relative min-h-[550px] lg:min-h-[700px] flex items-center">
+        <section id="hero" className="relative w-full overflow-hidden bg-black text-white pt-16 lg:pt-20">
+            {/* Altura Responsiva: Menor no mobile (para ver conteúdo abaixo), Maior no desktop */}
+            <div className="relative h-[600px] lg:h-[750px] w-full flex items-center bg-zinc-900">
                 
-                <AnimatePresence mode="wait">
+                <AnimatePresence initial={false} mode="popLayout">
                     
-                    {/* === SLIDE 0: LAYOUT PADRÃO (TEXTO + FOTO) === */}
+                    {/* === SLIDE 0: HERO PADRÃO (CÓDIGO) === */}
                     {currentIndex === 0 ? (
                         <motion.div
-                            key="standard-hero"
-                            initial={{ opacity: 0, x: 100 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            exit={{ opacity: 0, x: -100 }}
+                            key="hero-standard"
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
                             transition={{ duration: 0.5 }}
-                            className="absolute inset-0 bg-gradient-to-br from-black via-[#A8430F] to-black w-full h-full flex items-center"
+                            // Habilitar arraste também no slide padrão
+                            drag="x"
+                            dragConstraints={{ left: 0, right: 0 }}
+                            dragElastic={0.2}
+                            onDragEnd={handleDragEnd}
+                            className="absolute inset-0 w-full h-full bg-gradient-to-br from-black via-[#A8430F] to-black flex items-center cursor-grab active:cursor-grabbing"
                         >
-                            <div className="container mx-auto px-4 py-10 lg:py-20">
-                                <div className="grid lg:grid-cols-2 gap-12 items-center">
+                            <div className="container mx-auto px-4 lg:px-12">
+                                <div className="grid lg:grid-cols-2 gap-8 lg:gap-16 items-center">
                                     
-                                    {/* Coluna Esquerda (Texto) */}
-                                    <div className="space-y-8">
+                                    {/* Texto */}
+                                    <div className="space-y-6 lg:space-y-8 z-10 relative">
                                         <motion.div 
                                             initial={{ opacity: 0, y: 20 }}
                                             animate={{ opacity: 1, y: 0 }}
                                             transition={{ delay: 0.2 }}
                                             className="inline-block"
                                         >
-                                            <span className="bg-[#A8430F] text-white px-4 py-2 rounded-full text-sm font-semibold">
+                                            <span className="bg-[#A8430F] text-white px-4 py-2 rounded-full text-xs lg:text-sm font-bold uppercase tracking-wide shadow-lg">
                                                 Transforme sua carreira
                                             </span>
                                         </motion.div>
 
-                                        {/* CORREÇÃO: Texto reduzido para 3xl no mobile para não ocupar tudo */}
                                         <motion.h1 
                                             initial={{ opacity: 0, y: 20 }}
                                             animate={{ opacity: 1, y: 0 }}
                                             transition={{ delay: 0.3 }}
-                                            className="text-3xl lg:text-6xl font-bold leading-tight"
+                                            className="text-4xl sm:text-5xl lg:text-7xl font-extrabold leading-tight tracking-tight"
                                         >
                                             Transforme seu futuro com a{' '}
-                                            <span className="text-[#A8430F]">IesCursos</span>
+                                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#FF6B00] to-[#FF9E40]">
+                                                IesCursos
+                                            </span>
                                         </motion.h1>
 
-                                        {/* CORREÇÃO: Texto reduzido para lg no mobile */}
                                         <motion.p 
                                             initial={{ opacity: 0, y: 20 }}
                                             animate={{ opacity: 1, y: 0 }}
                                             transition={{ delay: 0.4 }}
-                                            className="text-lg lg:text-2xl text-gray-300 leading-relaxed"
+                                            className="text-base sm:text-lg lg:text-xl text-zinc-300 max-w-xl leading-relaxed"
                                         >
-                                            Cursos Profissionalizantes Presenciais e EAD com valores acessíveis
+                                            Cursos Profissionalizantes Presenciais e EAD com a qualidade que o mercado exige e valores que cabem no seu bolso.
                                         </motion.p>
 
                                         <motion.ul 
@@ -109,30 +146,25 @@ export function Hero() {
                                             transition={{ delay: 0.5 }}
                                             className="space-y-3"
                                         >
-                                            <li className="flex items-center gap-3 text-base lg:text-lg">
-                                                <Check className="w-6 h-6 text-[#A8430F]" />
-                                                <span>Certificado reconhecido no mercado</span>
-                                            </li>
-                                            <li className="flex items-center gap-3 text-base lg:text-lg">
-                                                <Check className="w-6 h-6 text-[#A8430F]" />
-                                                <span>Professores experientes e qualificados</span>
-                                            </li>
-                                            <li className="flex items-center gap-3 text-base lg:text-lg">
-                                                <Check className="w-6 h-6 text-[#A8430F]" />
-                                                <span>Aulas práticas e material completo</span>
-                                            </li>
+                                            {['Certificado reconhecido', 'Professores qualificados', 'Aulas práticas'].map((item, i) => (
+                                                <li key={i} className="flex items-center gap-3 text-sm lg:text-base text-zinc-200">
+                                                    <div className="bg-[#A8430F]/20 p-1 rounded-full">
+                                                        <Check className="w-4 h-4 text-[#FF6B00]" />
+                                                    </div>
+                                                    {item}
+                                                </li>
+                                            ))}
                                         </motion.ul>
 
                                         <motion.div 
                                             initial={{ opacity: 0, y: 20 }}
                                             animate={{ opacity: 1, y: 0 }}
                                             transition={{ delay: 0.6 }}
-                                            className="flex flex-col sm:flex-row gap-4 pt-4"
+                                            className="pt-4"
                                         >
                                             <button
                                                 onClick={() => scrollToSection('contact')}
-                                                className="group bg-[#A8430F] text-white px-8 py-4 rounded-full font-semibold text-lg 
-                                                        hover:bg-[#d66a1f] transition-all flex items-center justify-center gap-2 shadow-lg"
+                                                className="group relative inline-flex items-center justify-center gap-2 px-8 py-4 font-semibold text-white transition-all duration-200 bg-[#A8430F] rounded-full hover:bg-[#d66a1f] hover:scale-105 shadow-[0_0_20px_rgba(168,67,15,0.5)]"
                                             >
                                                 Matricule-se agora
                                                 <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
@@ -140,24 +172,20 @@ export function Hero() {
                                         </motion.div>
                                     </div>
 
-                                    {/* Coluna Direita (Foto Original) */}
+                                    {/* Imagem Hero Padrão (Desktop Only para não poluir mobile) */}
                                     <div className="relative hidden lg:block">
-                                        <div className="relative rounded-2xl overflow-hidden shadow-2xl">
+                                        <div className="relative rounded-3xl overflow-hidden shadow-2xl border border-white/10 transform hover:scale-[1.02] transition-transform duration-500">
+                                            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent z-10"></div>
                                             <img
                                                 src="https://images.pexels.com/photos/3184418/pexels-photo-3184418.jpeg?auto=compress&cs=tinysrgb&w=800"
-                                                alt="Estudante sorrindo"
+                                                alt="Estudante"
                                                 className="w-full h-auto object-cover"
                                             />
-                                            <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
-                                        </div>
-                                        {/* Cards Flutuantes */}
-                                        <div className="absolute -bottom-6 -left-6 bg-[#A8430F] text-white p-6 rounded-xl shadow-xl">
-                                            <p className="text-4xl font-bold">+5.000</p>
-                                            <p className="text-sm">Alunos formados</p>
-                                        </div>
-                                        <div className="absolute -top-6 -right-6 bg-white text-black p-6 rounded-xl shadow-xl">
-                                            <p className="text-4xl font-bold text-[#A8430F]">15+</p>
-                                            <p className="text-sm font-semibold">XP no Mercado</p>
+                                            {/* Cards Flutuantes */}
+                                            <div className="absolute bottom-8 left-8 z-20 bg-[#A8430F]/90 backdrop-blur-sm p-4 rounded-xl border border-white/20 shadow-lg">
+                                                <p className="text-3xl font-bold text-white">+5k</p>
+                                                <p className="text-xs text-white/80 uppercase tracking-wider">Alunos Formados</p>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -165,57 +193,87 @@ export function Hero() {
                         </motion.div>
                     ) : (
                         
-                    /* === SLIDES EXTRAS: BANNERS DO ADMIN === */
+                        /* === SLIDES DE BANNER (IMAGENS) === */
                         <motion.div
                             key={`banner-${currentIndex}`}
-                            initial={{ opacity: 0, x: 100 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            exit={{ opacity: 0, x: -100 }}
-                            transition={{ duration: 0.5 }}
-                            className="absolute inset-0 w-full h-full bg-black flex items-center justify-center"
+                            variants={slideVariants}
+                            initial="enter"
+                            animate="center"
+                            exit="exit"
+                            transition={{
+                                x: { type: "spring", stiffness: 300, damping: 30 },
+                                opacity: { duration: 0.2 }
+                            }}
+                            // Configurações de Swipe (Arrastar)
+                            drag="x"
+                            dragConstraints={{ left: 0, right: 0 }}
+                            dragElastic={1}
+                            onDragEnd={handleDragEnd}
+                            className="absolute inset-0 w-full h-full bg-zinc-900 cursor-grab active:cursor-grabbing"
                         >
-                            {/* O Banner ocupa tudo */}
-                            {/* CORREÇÃO AQUI: object-contain no mobile impede cortes, object-cover no desktop preenche */}
-                            <img 
-                                src={banners[currentIndex - 1]?.imagem_url} 
-                                alt="Promoção" 
-                                className="w-full h-full object-contain lg:object-cover object-center" 
-                            />
-                            {/* Overlay suave para garantir que setas fiquem visíveis se a imagem for clara */}
-                            <div className="absolute inset-0 bg-black/10 pointer-events-none"></div>
+                            {/* RECUPERA O BANNER CORRESPONDENTE (Índice - 1 pois o 0 é o padrão) */}
+                            {(() => {
+                                const banner = banners[currentIndex - 1];
+                                if (!banner) return null;
+
+                                return (
+                                    <>
+                                        {/* 1. IMAGEM MOBILE (Visível apenas em md:hidden) */}
+                                        {/* object-cover garante que não tenha barra preta, ele preenche tudo */}
+                                        <img 
+                                            src={banner.mobile_image || banner.imagem_url} 
+                                            alt={banner.titulo} 
+                                            className="block md:hidden w-full h-full object-cover"
+                                            draggable={false} // Importante para não bugar o drag do framer
+                                        />
+
+                                        {/* 2. IMAGEM DESKTOP (Visível apenas em md:block) */}
+                                        <img 
+                                            src={banner.imagem_url} 
+                                            alt={banner.titulo} 
+                                            className="hidden md:block w-full h-full object-cover"
+                                            draggable={false}
+                                        />
+
+                                        {/* Overlay Opcional para garantir leitura se tiver texto por cima no futuro */}
+                                        {/* <div className="absolute inset-0 bg-black/10 pointer-events-none"></div> */}
+                                    </>
+                                );
+                            })()}
                         </motion.div>
                     )}
-
                 </AnimatePresence>
 
-                {/* === CONTROLES DO CARROSSEL (Só aparecem se tiver banners) === */}
+                {/* === CONTROLES (Setas e Bolinhas) === */}
                 {totalSlides > 1 && (
                     <>
+                        {/* SETAS: 'hidden lg:flex' remove elas do celular e deixa só no PC */}
                         <button 
                             onClick={prevSlide}
-                            className="absolute left-4 top-1/2 -translate-y-1/2 z-20 bg-black/30 hover:bg-[#A8430F] text-white p-3 rounded-full transition-colors backdrop-blur-sm"
+                            className="hidden lg:flex absolute left-4 top-1/2 -translate-y-1/2 z-20 bg-black/20 hover:bg-[#A8430F] text-white p-4 rounded-full transition-all backdrop-blur-sm border border-white/10 hover:border-[#A8430F] group"
                         >
-                            <ChevronLeft size={30} />
+                            <ChevronLeft size={28} className="group-hover:-translate-x-1 transition-transform" />
                         </button>
                         
                         <button 
                             onClick={nextSlide}
-                            className="absolute right-4 top-1/2 -translate-y-1/2 z-20 bg-black/30 hover:bg-[#A8430F] text-white p-3 rounded-full transition-colors backdrop-blur-sm"
+                            className="hidden lg:flex absolute right-4 top-1/2 -translate-y-1/2 z-20 bg-black/20 hover:bg-[#A8430F] text-white p-4 rounded-full transition-all backdrop-blur-sm border border-white/10 hover:border-[#A8430F] group"
                         >
-                            <ChevronRight size={30} />
+                            <ChevronRight size={28} className="group-hover:translate-x-1 transition-transform" />
                         </button>
 
-                        {/* Bolinhas indicadoras */}
+                        {/* INDICADORES (Bolinhas): Visíveis sempre */}
                         <div className="absolute bottom-6 left-0 right-0 z-20 flex justify-center gap-3">
                             {[...Array(totalSlides)].map((_, idx) => (
                                 <button
                                     key={idx}
                                     onClick={() => setCurrentIndex(idx)}
-                                    className={`w-3 h-3 rounded-full transition-all ${
+                                    className={`h-2 rounded-full transition-all duration-300 shadow-sm ${
                                         currentIndex === idx 
                                             ? 'bg-[#A8430F] w-8' 
-                                            : 'bg-white/50 hover:bg-white'
+                                            : 'bg-white/40 hover:bg-white w-2'
                                     }`}
+                                    aria-label={`Ir para slide ${idx + 1}`}
                                 />
                             ))}
                         </div>

@@ -552,19 +552,22 @@ function CourseForm({
                         <Plus size={16} />
                     </button>
                 </div>
-                <ul className="text-sm text-zinc-300 max-h-32 overflow-y-auto space-y-1 mt-2 p-1">
+                <ul className="text-sm text-zinc-300 max-h-48 overflow-y-auto space-y-2 mt-2 p-1 custom-scrollbar">
                     {(form.content ?? []).map((item, index) => (
                         <motion.li
                             key={index}
                             initial={{ opacity: 0, x: -10 }}
                             animate={{ opacity: 1, x: 0 }}
-                            className="flex items-center justify-between gap-2 bg-zinc-900/60 px-2 py-1 rounded border border-zinc-700"
+                            className="flex items-start justify-between gap-3 bg-zinc-900/60 px-3 py-2 rounded border border-zinc-700"
                         >
-                            <span className="truncate">{item}</span>
+                            {/* CORREÇÃO APLICADA AQUI: Quebra de texto */}
+                            <span className="text-xs break-words whitespace-normal min-w-0 flex-1 leading-relaxed">
+                                {item}
+                            </span>
                             <button
                                 type="button"
                                 onClick={() => handleRemoveContent(index)}
-                                className="text-red-500 hover:text-red-400"
+                                className="text-red-500 hover:text-red-400 flex-shrink-0 mt-0.5"
                             >
                                 <X size={14} />
                             </button>
@@ -593,19 +596,22 @@ function CourseForm({
                         <Plus size={16} />
                     </button>
                 </div>
-                <ul className="text-sm text-zinc-300 max-h-32 overflow-y-auto space-y-1 mt-2 p-1">
+                <ul className="text-sm text-zinc-300 max-h-48 overflow-y-auto space-y-2 mt-2 p-1 custom-scrollbar">
                     {(form.benefits ?? []).map((item, index) => (
                         <motion.li
                             key={index}
                             initial={{ opacity: 0, x: -10 }}
                             animate={{ opacity: 1, x: 0 }}
-                            className="flex items-center justify-between gap-2 bg-zinc-900/60 px-2 py-1 rounded border border-zinc-700"
+                            className="flex items-start justify-between gap-3 bg-zinc-900/60 px-3 py-2 rounded border border-zinc-700"
                         >
-                            <span className="truncate">{item}</span>
+                            {/* CORREÇÃO APLICADA AQUI: Quebra de texto */}
+                            <span className="text-xs break-words whitespace-normal min-w-0 flex-1 leading-relaxed">
+                                {item}
+                            </span>
                             <button
                                 type="button"
                                 onClick={() => handleRemoveBenefit(index)}
-                                className="text-red-500 hover:text-red-400"
+                                className="text-red-500 hover:text-red-400 flex-shrink-0 mt-0.5"
                             >
                                 <X size={14} />
                             </button>
@@ -620,18 +626,20 @@ function CourseForm({
             <button
                 type="button"
                 onClick={onCancel}
-                className="px-6 py-2 rounded-lg border border-zinc-700 text-sm text-zinc-300 hover:bg-zinc-800 transition-colors"
+                className="px-4 py-2 rounded-lg border border-zinc-700 text-sm text-zinc-300 hover:bg-zinc-800 transition-colors"
             >
                 Cancelar
             </button>
             <button
                 type="submit"
                 disabled={saving}
-                className={`px-6 py-2 rounded-lg text-sm text-white flex items-center gap-2 disabled:opacity-60 transition-colors hover:bg-[#d66a1f] shadow-md`}
+                // ADICIONADO: 'whitespace-nowrap' para não quebrar linha e 'h-10' para travar a altura igual ao cancelar se necessário
+                className={`px-6 py-2 rounded-lg text-sm text-white flex items-center justify-center gap-2 disabled:opacity-60 transition-colors hover:bg-[#d66a1f] shadow-md whitespace-nowrap`}
                 style={{ backgroundColor: ACCENT_COLOR }}
             >
-                <Save size={16} />
-                {saving ? "Salvando..." : "Salvar alterações"}
+                <Save size={18} />
+                {saving ? "Salvando..." : "Salvar"} 
+                {/* DICA: Se "Salvar alterações" ainda ficar grande em telas muito pequenas, use apenas "Salvar" */}
             </button>
         </div>
       </form>

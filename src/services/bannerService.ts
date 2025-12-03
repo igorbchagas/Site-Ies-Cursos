@@ -1,10 +1,10 @@
-// src/services/bannerService.ts
 import { supabase } from "../lib/supabaseClient";
 import { Banner } from "../types";
 
 export const bannerService = {
   // Pega apenas os ativos para o Hero (Público)
   getActive: async (): Promise<Banner[]> => {
+    // O select('*') já traz a coluna mobile_image automaticamente se ela existir no banco
     const { data, error } = await supabase
       .from('banners')
       .select('*')
@@ -29,7 +29,7 @@ export const bannerService = {
     return data || [];
   },
 
-  // Adicionar novo banner (Dados + Storage é feito no front, aqui salvamos a ref no banco)
+  // Adicionar novo banner
   create: async (banner: Partial<Banner>): Promise<Banner> => {
     const { data, error } = await supabase
       .from('banners')
@@ -41,14 +41,28 @@ export const bannerService = {
     return data;
   },
 
+  // --- NOVO: Função para Editar dados do banner (Imagem, Título, Link) ---
+  update: async (id: string, banner: Partial<Banner>): Promise<Banner> => {
+    const { data, error } = await supabase
+      .from('banners')
+      .update(banner) // Aqui ele vai aceitar o campo mobile_image se estiver no objeto
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  },
+  // -----------------------------------------------------------------------
+
   // Deletar
   delete: async (id: string): Promise<void> => {
     const { error } = await supabase.from('banners').delete().eq('id', id);
     if (error) throw error;
   },
 
-// Alternar status
-  toggleActive: async (id: string): Promise<boolean> => { // <--- Retorna Promise<boolean>
+  // Alternar status (Ativo/Inativo)
+  toggleActive: async (id: string): Promise<boolean> => {
     // 1. OBTÉM o status atual do banco
     const { data, error: fetchError } = await supabase
         .from('banners')
@@ -69,7 +83,7 @@ export const bannerService = {
     
     if (error) throw error;
 
-    // 4. RETORNA o NOVO status (true ou false)
+    // 4. RETORNA o NOVO status
     return newStatus;
   }
 };

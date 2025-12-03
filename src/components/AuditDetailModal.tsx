@@ -1,154 +1,193 @@
-// src/components/AuditDetailModal.tsx
-import { RefreshCw, TrendingUp, TrendingDown } from 'lucide-react';
-import { AnimatePresence, motion } from 'framer-motion';
-import { createPortal } from "react-dom"; // <-- NOVO IMPORT: Para injetar no body
+import { useEffect } from 'react';
+import { createPortal } from 'react-dom';
+import { motion } from 'framer-motion';
+import { X, TrendingUp, TrendingDown, RefreshCw, ArrowRight } from 'lucide-react';
 
+// Tipagem simplificada baseada no que você usa
 interface AuditDetailModalProps {
-    log: any; // O objeto AuditLog completo, que agora inclui o email
+    log: any | null; // Pode tipar melhor se quiser (AugmentedAuditLog)
     isOpen: boolean;
     onClose: () => void;
 }
 
-// Helper para verificar a igualdade, tratando objetos JSON
-const deepEqual = (a: any, b: any) => JSON.stringify(a) === JSON.stringify(b);
-
-// Helper para renderizar a diferença entre dois objetos
-const renderDiff = (oldData: any, newData: any) => {
-    const keys = new Set([...Object.keys(oldData || {}), ...Object.keys(newData || {})]);
-    const changes: JSX.Element[] = [];
-
-    keys.forEach(key => {
-        const oldValue = oldData ? oldData[key] : 'N/A';
-        const newValue = newData ? newData[key] : 'N/A';
-
-        if (!deepEqual(oldValue, newValue)) {
-            changes.push(
-                <div key={key} className="py-3 border-b border-zinc-700 last:border-b-0">
-                    <strong className="text-orange-400 block mb-2">{key}</strong>
-                    
-                    <div className="flex flex-col md:flex-row justify-between items-stretch text-sm space-y-3 md:space-y-0 md:space-x-4">
-                        <div className="flex-1 p-3 rounded-lg bg-zinc-700/50">
-                            <span className="text-zinc-400 block font-light mb-1">Valor Antigo:</span>
-                            <span className="text-red-300 font-mono text-xs break-words whitespace-pre-wrap">
-                                {typeof oldValue === 'object' && oldValue !== null ? JSON.stringify(oldValue, null, 2) : String(oldValue)}
-                            </span>
-                        </div>
-                        <div className="flex-1 p-3 rounded-lg bg-zinc-700/50">
-                            <span className="text-zinc-400 block font-light mb-1">Novo Valor:</span>
-                            <span className="text-green-300 font-mono text-xs break-words whitespace-pre-wrap">
-                                {typeof newValue === 'object' && newValue !== null ? JSON.stringify(newValue, null, 2) : String(newValue)}
-                            </span>
-                        </div>
-                    </div>
-                </div>
-            );
-        }
-    });
-
-    return changes.length > 0 ? changes : <p className="text-zinc-400 py-4 text-center">Nenhuma alteração detectada nas chaves principais.</p>;
-};
-
-
-function AuditDetailModalContent({ log, onClose }: AuditDetailModalProps) {
-    const oldData = log.old_data || {};
-    const newData = log.new_data || {};
-    const isInsert = log.action_type === 'INSERT';
-    const isDelete = log.action_type === 'DELETE';
-    
-    let ActionIcon;
-    let ActionColor;
-
-    if (isInsert) { ActionIcon = TrendingUp; ActionColor = 'text-green-400'; }
-    else if (isDelete) { ActionIcon = TrendingDown; ActionColor = 'text-red-400'; }
-    else { ActionIcon = RefreshCw; ActionColor = 'text-blue-400'; }
-
-    return (
-        // 🛑 CORREÇÃO: Animação de escala para entrada/saída (mantida, mas agora no portal)
-        <motion.div
-            initial={{ scale: 0.9, y: 20 }}
-            animate={{ scale: 1, y: 0 }}
-            exit={{ scale: 0.9, y: 20, opacity: 0 }}
-            transition={{ duration: 0.25, type: 'tween' }}
-            className="bg-zinc-900 rounded-xl w-full max-w-4xl max-h-[90vh] overflow-y-auto shadow-2xl border border-zinc-700"
-            onClick={(e) => e.stopPropagation()} 
-        >
-            <header className="sticky top-0 bg-zinc-900 border-b border-zinc-700 p-6 flex justify-between items-center z-10">
-                <h2 className="text-2xl font-bold text-white flex items-center gap-3">
-                    <ActionIcon className={ActionColor} size={24} />
-                    Detalhes da Alteração: <span className="font-light text-xl text-zinc-300">{log.action_type}</span>
-                </h2>
-                <button onClick={onClose} className="text-zinc-400 hover:text-white transition-colors text-3xl leading-none">
-                    &times;
-                </button>
-            </header>
-
-            <div className="p-6 space-y-6">
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm text-zinc-300 bg-zinc-800 p-4 rounded-lg">
-                    <div>
-                        <strong className="block text-zinc-400">Tabela Afetada:</strong>
-                        <span className="font-semibold text-white">{log.table_name}</span>
-                    </div>
-                    <div>
-                        <strong className="block text-zinc-400">ID do Registro:</strong>
-                        <span className="font-mono text-orange-300 break-all">{log.record_id}</span>
-                    </div>
-                     <div>
-                        <strong className="block text-zinc-400">Realizado por:</strong>
-                        <span className="font-mono text-green-300 break-all">{log.changed_by_user_email || log.changed_by_user_id}</span>
-                    </div>
-                </div>
-                
-                <h3 className="text-xl font-semibold text-white mt-6">
-                    {isInsert ? 'Dados Inseridos' : isDelete ? 'Dados Removidos' : 'Diferença de Campos (Diff)'}
-                </h3>
-                
-                <div className="bg-zinc-900 border border-zinc-700 p-4 rounded-lg">
-                    {isInsert && (
-                        <pre className="text-sm text-green-300 whitespace-pre-wrap font-mono overflow-auto max-h-96">
-                            {JSON.stringify(newData, null, 2)}
-                        </pre>
-                    )}
-                    {isDelete && (
-                        <pre className="text-sm text-red-300 whitespace-pre-wrap font-mono overflow-auto max-h-96">
-                            {JSON.stringify(oldData, null, 2)}
-                        </pre>
-                    )}
-                    {!isInsert && !isDelete && renderDiff(oldData, newData)}
-                    
-                    {!log.old_data && !log.new_data && (
-                        <p className="text-zinc-500 text-center py-8">Detalhes de conteúdo (old/new data) não capturados pela política de auditoria.</p>
-                    )}
-                </div>
-
-                <p className="text-xs text-zinc-500 pt-4 border-t border-zinc-700">
-                    Registro: {log.id} | Data/Hora: {new Date(log.changed_at).toLocaleString('pt-BR')}
-                </p>
-            </div>
-        </motion.div>
-    );
-}
-
-// O componente de exportação agora usa createPortal para injetar no body
 export default function AuditDetailModal({ log, isOpen, onClose }: AuditDetailModalProps) {
-    if (!isOpen || !log) return null;
     
-    const modalElement = (
-        <AnimatePresence>
-            {isOpen && (
-                <motion.div 
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    transition={{ duration: 0.2 }}
-                    className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 p-4" 
-                    onClick={onClose}
-                >
-                    <AuditDetailModalContent log={log} onClose={onClose} isOpen={isOpen} />
-                </motion.div>
-            )}
-        </AnimatePresence>
-    );
+    // 1. TRAVAR O SCROLL DO FUNDO
+    useEffect(() => {
+        if (isOpen) {
+            document.body.style.overflow = 'hidden'; // Trava
+        } else {
+            document.body.style.overflow = 'unset'; // Destrava
+        }
+        return () => {
+            document.body.style.overflow = 'unset'; // Garante destrava ao desmontar
+        };
+    }, [isOpen]);
 
-    // Injeta o modal diretamente no corpo do documento
-    return createPortal(modalElement, document.body);
+    if (!isOpen || !log) return null;
+
+    // Helper para formatar valores nulos ou objetos
+    const formatValue = (val: any) => {
+        if (val === null || val === undefined) return <span className="text-zinc-600 italic">null</span>;
+        if (typeof val === 'object') return <pre className="text-xs whitespace-pre-wrap">{JSON.stringify(val, null, 2)}</pre>;
+        if (val === true) return "true";
+        if (val === false) return "false";
+        return String(val);
+    };
+
+    // Identificar campos alterados
+    const getChangedFields = () => {
+        if (log.action_type === 'INSERT') return log.new_data || {};
+        if (log.action_type === 'DELETE') return log.old_data || {};
+        
+        // Para UPDATE, comparamos chaves
+        const oldD = log.old_data || {};
+        const newD = log.new_data || {};
+        const allKeys = Array.from(new Set([...Object.keys(oldD), ...Object.keys(newD)]));
+        
+        const changes: Record<string, { old: any, new: any }> = {};
+        
+        allKeys.forEach(key => {
+            if (JSON.stringify(oldD[key]) !== JSON.stringify(newD[key])) {
+                changes[key] = { old: oldD[key], new: newD[key] };
+            }
+        });
+        
+        return changes;
+    };
+
+    const changes = getChangedFields();
+    const actionColor = 
+        log.action_type === 'DELETE' ? 'bg-red-500/10 text-red-400 border-red-500/20' :
+        log.action_type === 'INSERT' ? 'bg-green-500/10 text-green-400 border-green-500/20' :
+        'bg-blue-500/10 text-blue-400 border-blue-500/20';
+
+    const ActionIcon = 
+        log.action_type === 'DELETE' ? TrendingDown :
+        log.action_type === 'INSERT' ? TrendingUp : RefreshCw;
+
+    return createPortal(
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
+            {/* Backdrop Escuro */}
+            <motion.div 
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={onClose}
+                className="absolute inset-0 bg-black/80 backdrop-blur-sm"
+            />
+
+            {/* Container do Modal */}
+            <motion.div 
+                initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                // Altura máxima de 85vh e overflow-y-auto permitem rolar DENTRO do modal se for grande
+                className="relative bg-zinc-900 border border-zinc-700 rounded-xl w-full max-w-lg shadow-2xl flex flex-col max-h-[85vh]"
+            >
+                {/* === HEADER FIXO (Não rola) === */}
+                <div className="flex items-start justify-between p-5 border-b border-zinc-800 bg-zinc-900 rounded-t-xl z-10 flex-shrink-0">
+                    <div>
+                        <h2 className="text-lg font-bold text-white leading-tight">Detalhes da Alteração</h2>
+                        <div className={`mt-2 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border text-xs font-bold uppercase tracking-wider ${actionColor}`}>
+                            <ActionIcon size={14} />
+                            {log.action_type}
+                        </div>
+                    </div>
+                    
+                    <button 
+                        onClick={onClose}
+                        className="p-2 -mr-2 -mt-2 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-lg transition-colors"
+                    >
+                        <X size={20} />
+                    </button>
+                </div>
+
+                {/* === CONTEÚDO COM SCROLL === */}
+                <div className="p-5 overflow-y-auto custom-scrollbar space-y-6">
+                    
+                    {/* Metadados */}
+                    <div className="grid grid-cols-2 gap-4 bg-zinc-950/50 p-4 rounded-lg border border-zinc-800">
+                        <div>
+                            <span className="text-[10px] uppercase text-zinc-500 font-bold">Tabela Afetada</span>
+                            <p className="text-sm text-zinc-200 font-mono mt-0.5">{log.table_name}</p>
+                        </div>
+                        <div>
+                            <span className="text-[10px] uppercase text-zinc-500 font-bold">ID do Registro</span>
+                            <p className="text-sm text-zinc-200 font-mono mt-0.5 truncate" title={log.record_id}>
+                                {log.record_id}
+                            </p>
+                        </div>
+                        <div className="col-span-2">
+                            <span className="text-[10px] uppercase text-zinc-500 font-bold">Realizado por</span>
+                            <p className="text-sm text-orange-400 font-medium mt-0.5 break-all">
+                                {log.changed_by_user_email || log.changed_by_user_id}
+                            </p>
+                        </div>
+                    </div>
+
+                    {/* Diff (Diferenças) */}
+                    <div>
+                        <h3 className="text-sm font-bold text-white mb-3 flex items-center gap-2">
+                            Diferença de Campos (Diff)
+                        </h3>
+                        
+                        <div className="space-y-3">
+                            {log.action_type === 'UPDATE' ? (
+                                Object.entries(changes).map(([key, val]: any) => (
+                                    <div key={key} className="bg-zinc-800/30 rounded-lg border border-zinc-700/50 overflow-hidden">
+                                        <div className="px-3 py-2 bg-zinc-800/50 border-b border-zinc-700/50 text-xs font-mono text-orange-300 font-semibold">
+                                            {key}
+                                        </div>
+                                        <div className="p-3 grid grid-cols-1 gap-2">
+                                            <div className="space-y-1">
+                                                <span className="text-[10px] text-red-400 uppercase font-bold">Valor Antigo</span>
+                                                <div className="text-sm text-zinc-300 bg-red-900/10 p-2 rounded border border-red-900/20 break-words font-mono">
+                                                    {formatValue(val.old)}
+                                                </div>
+                                            </div>
+                                            
+                                            {/* Seta visual apenas indicativa */}
+                                            <div className="flex justify-center text-zinc-600 py-1">
+                                                <ArrowRight size={14} className="rotate-90 md:rotate-0" />
+                                            </div>
+
+                                            <div className="space-y-1">
+                                                <span className="text-[10px] text-green-400 uppercase font-bold">Novo Valor</span>
+                                                <div className="text-sm text-zinc-300 bg-green-900/10 p-2 rounded border border-green-900/20 break-words font-mono">
+                                                    {formatValue(val.new)}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))
+                            ) : (
+                                // Para INSERT ou DELETE mostramos apenas uma lista JSON bonita
+                                <div className="bg-zinc-950 p-4 rounded-lg border border-zinc-800 font-mono text-xs text-zinc-300 overflow-x-auto">
+                                    <pre>{JSON.stringify(changes, null, 2)}</pre>
+                                </div>
+                            )}
+
+                            {Object.keys(changes).length === 0 && (
+                                <p className="text-center text-zinc-500 text-sm py-4 italic">
+                                    Nenhuma alteração específica detectada ou dados brutos não disponíveis.
+                                </p>
+                            )}
+                        </div>
+                    </div>
+                </div>
+
+                {/* === FOOTER (Opcional, só para fechar visualmente) === */}
+                <div className="p-4 border-t border-zinc-800 bg-zinc-900 rounded-b-xl flex justify-end flex-shrink-0">
+                     <button
+                        onClick={onClose}
+                        className="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-white text-sm rounded-lg transition-colors border border-zinc-700"
+                     >
+                        Fechar
+                     </button>
+                </div>
+            </motion.div>
+        </div>,
+        document.body
+    );
 }
