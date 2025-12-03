@@ -40,12 +40,17 @@ export interface Banner {
   ativo: boolean;
   ordem: number;
 }
-// 🟩 NOVA INTERFACE: Momento/Foto da Galeria
+// 🟩 INTERFACE ATUALIZADA: Momento/Foto da Galeria
+// Mapeamento: title, description, category, type são novos. src e date
+// são mapeados dos campos antigos (imagem_url, data_upload).
 export interface Moment {
     id: string;
-    titulo: string; // Descrição opcional ou legenda
-    imagem_url: string; // URL da imagem armazenada no Supabase
-    data_upload: string; // Data de criação/upload
+    title: string; // Título/Nome do Evento
+    description: string; // Descrição detalhada do Momento
+    category: 'eventos' | 'alunos' | 'estrutura' | 'aulas' | 'comunidade';
+    type: 'image' | 'video'; // Tipo do Mídia
+    src: string; // URL da imagem/vídeo (antigo imagem_url)
+    date: string; // Data de upload (antigo data_upload)
 }
 
 // 🟩 NOVA INTERFACE: Leads de Contato do WhatsApp

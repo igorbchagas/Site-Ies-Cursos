@@ -98,7 +98,7 @@ export function Footer() {
         </div>
 
         <div className="border-t border-gray-800 pt-8 mt-8 text-center text-gray-500">
-          <p>&copy; {new Date().getFullYear()} IesCursos. Todos os direitos reservados. | Desenvolvido por IesCursos.</p>
+          <p>&copy; {new Date().getFullYear()} IesCursos. Todos os direitos reservados. | Desenvolvido por Arroiz e Eduardo.</p>
         </div>
       </div>
     </footer>

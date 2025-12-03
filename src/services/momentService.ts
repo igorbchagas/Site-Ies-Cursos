@@ -1,55 +1,95 @@
 // src/services/momentService.ts
 
-import { supabase } from "./../lib/supabaseClient"; // Assumindo que supabaseClient está configurado
+import { supabase } from "../lib/supabaseClient";
 import { Moment } from "../types";
 
-const MOMENTS_TABLE = "momentos"; // Nome da tabela que criaremos no Supabase
+// Nome da tabela no Supabase
+const MOMENTS_TABLE = "momentos";
+// Nome do Bucket no Supabase Storage
+const STORAGE_BUCKET = "images";
+
+export interface StorageUsage {
+    total: number;
+    used: number; // Em MB
+    percentage: number;
+    isFull: boolean;
+}
+
+// Extende a interface Moment para incluir a data específica do evento
+export interface MomentEvent extends Moment {
+    event_date: string;
+}
 
 export const momentService = {
     /**
      * Carrega todos os momentos do banco de dados.
      */
-    async getAll(): Promise<Moment[]> {
+    async getAll(): Promise<MomentEvent[]> {
+        // Seleciona explicitamente as colunas para evitar erros de retorno
         const { data, error } = await supabase
             .from(MOMENTS_TABLE)
-            .select('*');
+            .select('*') // Pega tudo para garantir, ou especifique: id, title, description, category, type, imagem_url, data_upload, event_date
+            .order('data_upload', { ascending: false });
 
         if (error) {
             console.error("Erro ao buscar momentos:", error);
             throw new Error("Falha ao carregar galeria.");
         }
 
-        // Garante que os campos de data e URL estejam corretos
-        return data.map(item => ({
+        // Mapeia os dados do banco (snake_case) para a interface da aplicação
+        return (data || []).map((item: any) => ({
             id: item.id,
-            titulo: item.titulo || '',
-            imagem_url: item.imagem_url,
-            data_upload: item.data_upload,
+            title: item.title ?? "",
+            description: item.description ?? "",
+            category: (item.category as Moment['category']) ?? "eventos",
+            type: (item.type as Moment['type']) ?? "image",
+            src: item.imagem_url, // Mapeia imagem_url do banco para src
+            date: item.data_upload,
+            event_date: item.event_date || item.data_upload, // Fallback se não tiver data do evento
         }));
     },
 
     /**
-     * Adiciona um novo momento (usado pelo Admin).
+     * Adiciona um novo momento.
      */
-    async create(momentData: Omit<Moment, 'id' | 'data_upload'>): Promise<Moment> {
+    async create(momentData: Omit<Moment, 'id' | 'date'> & { event_date: string }): Promise<MomentEvent> {
+        // Prepara o objeto para inserção no banco
+        const dbPayload = {
+            title: momentData.title,
+            description: momentData.description,
+            category: momentData.category,
+            type: momentData.type,
+            imagem_url: momentData.src, // Salva no banco como imagem_url
+            event_date: momentData.event_date,
+            // O campo data_upload geralmente é gerado automaticamente (default now()), mas se precisar enviar:
+            // data_upload: new Date().toISOString() 
+        };
+
         const { data, error } = await supabase
             .from(MOMENTS_TABLE)
-            .insert([{ 
-                titulo: momentData.titulo, 
-                imagem_url: momentData.imagem_url 
-            }])
+            .insert([dbPayload])
             .select()
             .single();
 
         if (error) {
             console.error("Erro ao criar momento:", error);
-            throw new Error("Falha ao salvar a imagem.");
+            throw new Error(`Falha ao salvar o momento: ${error.message}`);
         }
-        return data;
+
+        return {
+            id: data.id,
+            title: data.title,
+            description: data.description,
+            category: data.category,
+            type: data.type,
+            src: data.imagem_url,
+            date: data.data_upload,
+            event_date: data.event_date,
+        };
     },
 
     /**
-     * Remove um momento pelo ID (usado pelo Admin).
+     * Remove um momento pelo ID.
      */
     async remove(id: string): Promise<void> {
         const { error } = await supabase
@@ -59,7 +99,40 @@ export const momentService = {
 
         if (error) {
             console.error("Erro ao remover momento:", error);
-            throw new Error("Falha ao remover a imagem.");
+            throw new Error("Falha ao remover o registro do banco de dados.");
         }
     },
+
+    /**
+     * Simulação do uso do Storage (Baseado na contagem de imagens).
+     */
+    async getStorageUsage(): Promise<StorageUsage> {
+        const total = 50; // Limite simulado de 50 MB
+
+        try {
+            const { count, error } = await supabase
+                .from(MOMENTS_TABLE)
+                .select('*', { count: 'exact', head: true })
+                .eq('type', 'image');
+
+            if (error) {
+                console.warn("WARN: Falha ao contar imagens para simular uso.");
+                return { total: 50, used: 0, percentage: 0, isFull: false };
+            }
+
+            const imageCount = count || 0;
+            const averageImageSizeMB = 1.5; // Estimativa média por foto
+            const simulatedUsedMB = imageCount * averageImageSizeMB;
+
+            const used = Math.min(simulatedUsedMB, total);
+            const percentage = (used / total) * 100;
+            const isFull = percentage >= 95;
+
+            return { total, used, percentage, isFull };
+
+        } catch (error) {
+            console.warn("WARN: Erro inesperado ao simular uso do storage.", error);
+            return { total: 50, used: 0, percentage: 0, isFull: false };
+        }
+    }
 };
