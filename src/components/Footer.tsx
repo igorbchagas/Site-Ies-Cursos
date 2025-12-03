@@ -1,6 +1,6 @@
 // Footer.tsx - Versão com Cores e Estilo Moderno
 
-import { MapPin, Phone, Mail, Clock, Instagram, Facebook, GraduationCap } from 'lucide-react';
+import { MapPin, Phone, Mail, Clock, Instagram, Facebook } from 'lucide-react';
 import logo from "./img/logo-ies-not-background-2.png"; // Ajuste o caminho conforme o seu projeto
 
 const ACCENT_COLOR = "#E45B25"; // Laranja forte
@@ -20,7 +20,7 @@ export function Footer() {
               />
             </div>
             <p className="text-gray-400 leading-relaxed">
-              Transformando vidas através da educação profissionalizante há mais de 15 anos.
+              Transformando vidas através da educação profissionalizante há mais de 9 anos.
             </p>
           </div>
 
@@ -41,6 +41,9 @@ export function Footer() {
               </li>
               <li>
                 <a href="#contact" className={`text-gray-400 hover:text-[${ACCENT_COLOR}] transition-colors`}>Contato</a>
+              </li>
+              <li>
+                <a href="/momentos" className={`text-gray-400 hover:text-[${ACCENT_COLOR}] transition-colors`}>Momentos</a>
               </li>
             </ul>
           </div>

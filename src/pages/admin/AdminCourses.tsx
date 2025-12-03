@@ -1,5 +1,3 @@
-// src/pages/AdminCourses.tsx
-
 import { useEffect, useMemo, useState, FormEvent, HTMLProps } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
@@ -18,7 +16,7 @@ import {
   X,
   RotateCw,
   ExternalLink,
-  Tag,
+  Tag
 } from "lucide-react";
 import { toast } from "sonner";
 import { Course } from "../../types";
@@ -326,7 +324,7 @@ function CourseForm({
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4 }}
-      // Tema Escuro
+      // Tema Escuro - Padding ajustado para p-4 no mobile
       className={`bg-[${DARK_SHADE}] border border-zinc-700 rounded-xl p-4 md:p-8 shadow-xl text-[${TEXT_COLOR}]`}
     >
       <div className="flex items-start justify-between mb-6 border-b border-zinc-700 pb-4">
@@ -345,7 +343,7 @@ function CourseForm({
           className="flex items-center gap-1 text-sm text-zinc-400 hover:text-red-400 transition-colors"
         >
           <X size={18} />
-          Fechar
+          <span className="hidden sm:inline">Fechar</span>
         </button>
       </div>
 
@@ -959,7 +957,8 @@ export default function AdminCourses() {
   }
 
   return (
-    <div className={`space-y-6 p-6 md:p-8 bg-[${DARK_BACKGROUND}] rounded-xl text-[${TEXT_COLOR}]`}>
+    // Padding reduzido para p-4 no mobile
+    <div className={`space-y-6 p-4 md:p-8 bg-[${DARK_BACKGROUND}] rounded-xl text-[${TEXT_COLOR}]`}>
       <AnimatePresence mode="wait">
         {/* Renderiza o formulário de edição ou a tabela */}
         {editingCourse ? (
@@ -977,7 +976,7 @@ export default function AdminCourses() {
         ) : (
           <motion.div key="course-list" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }}>
             {/* Cabeçalho */}
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-6">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
               <div className="flex items-center gap-3">
                 <div 
                     className={`w-10 h-10 rounded-xl flex items-center justify-center shadow-md`}
@@ -988,19 +987,20 @@ export default function AdminCourses() {
                 <div className="flex flex-col">
                   <h1 className={`text-xl font-bold`} style={{ color: TEXT_COLOR }}>Gerenciar Cursos</h1>
                   <span className="text-sm text-zinc-400">
-                    {filteredCourses.length} curso(s) encontrado(s)
+                    {filteredCourses.length} curso(s)
                   </span>
                 </div>
               </div>
 
-              <div className="flex flex-wrap gap-2 justify-end">
+              {/* Botões do Topo - Envolvem para caber no mobile */}
+              <div className="flex flex-wrap gap-2 justify-start md:justify-end">
                 <button
                   type="button"
                   onClick={() => loadCourses(true)}
                   className="flex items-center gap-2 px-3 py-2 rounded-lg border border-zinc-700 text-xs text-zinc-200 hover:bg-zinc-800 transition-colors shadow-sm"
                 >
                   <RotateCw size={14} />
-                  Atualizar lista
+                  <span className="hidden sm:inline">Atualizar</span>
                 </button>
 
                 <button
@@ -1012,7 +1012,7 @@ export default function AdminCourses() {
                   className="flex items-center gap-2 px-3 py-2 rounded-lg border border-zinc-700 text-xs text-zinc-200 hover:bg-zinc-800 transition-colors shadow-sm"
                 >
                   <ExternalLink size={14} />
-                  Sair do Admin
+                  <span className="hidden sm:inline">Sair do Admin</span>
                 </button>
 
                 <button
@@ -1027,7 +1027,7 @@ export default function AdminCourses() {
               </div>
             </div>
 
-            {/* Filtros e Busca - CORREÇÃO DE ALINHAMENTO */}
+            {/* Filtros e Busca */}
             <div 
                 className={`bg-[${DARK_SHADE}] border border-zinc-700 rounded-xl p-4 grid grid-cols-1 md:grid-cols-7 gap-4 items-end shadow-sm`}
             >
@@ -1035,13 +1035,13 @@ export default function AdminCourses() {
               {/* BUSCA */}
               <div className="flex flex-col gap-1 col-span-1 md:col-span-4">
                 <p className="text-xs text-zinc-400 font-semibold uppercase">
-                    Buscar por nome ou slug
+                    Buscar
                 </p>
                 <div className="flex items-center gap-2">
                     <PackageSearch size={16} className="text-zinc-500 flex-shrink-0" />
                     <input
                       type="text"
-                      placeholder="Digite para filtrar cursos..."
+                      placeholder="Filtrar por nome..."
                       value={search}
                       onChange={(e) => setSearch(e.target.value)}
                       className={`w-full px-3 py-2 rounded-lg bg-zinc-900/60 border border-zinc-700 text-sm text-[${TEXT_COLOR}] focus:outline-none focus:ring-2 focus:ring-[${ACCENT_COLOR}] placeholder:text-zinc-600`}
@@ -1061,7 +1061,7 @@ export default function AdminCourses() {
                           onChange={(e) => setFilterType(e.target.value as "all" | "presencial" | "ead")}
                           className={`w-full px-3 py-2 rounded-lg bg-zinc-900/60 border border-zinc-700 text-sm text-[${TEXT_COLOR}] focus:outline-none focus:ring-2 focus:ring-[${ACCENT_COLOR}] appearance-none cursor-pointer`}
                       >
-                          <option value="all">Todos os tipos</option>
+                          <option value="all">Todos</option>
                           <option value="presencial">Presencial</option>
                           <option value="ead">EAD</option>
                       </select>
@@ -1087,9 +1087,74 @@ export default function AdminCourses() {
               </div>
             </div>
 
-            {/* Tabela de Cursos */}
+            {/* ========== NOVIDADE MOBILE: LISTA DE CARDS (Só aparece no mobile) ========== */}
+            <div className="md:hidden space-y-4 mt-6">
+                {filteredCourses.map((course) => {
+                    const activeFlag = course.active ?? true;
+                    const isPromoted = isCoursePromoted(course);
+
+                    return (
+                        <div key={course.id} className={`bg-[${DARK_SHADE}] border border-zinc-700 rounded-xl p-4 shadow-sm flex flex-col gap-3`}>
+                            {/* Cabeçalho do Card */}
+                            <div className="flex justify-between items-start">
+                                <div>
+                                    <h3 className="font-bold text-white text-base">{course.name}</h3>
+                                    <p className="text-xs text-zinc-500">{course.slug}</p>
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={() => openConfirm("toggle", course)}
+                                    className={`inline-flex items-center justify-center p-1.5 rounded-full border transition-colors ${
+                                        activeFlag ? 'bg-green-900/20 text-green-400 border-green-800' : 'bg-zinc-800 text-zinc-500 border-zinc-700'
+                                    }`}
+                                >
+                                    {activeFlag ? <Eye size={16} /> : <EyeOff size={16} />}
+                                </button>
+                            </div>
+
+                            {/* Detalhes do Card */}
+                            <div className="flex items-center gap-3 text-sm">
+                                <span className="inline-flex items-center gap-1 px-2 py-1 rounded bg-zinc-900 border border-zinc-700 text-zinc-300 text-xs">
+                                    {course.type === "presencial" ? "Presencial" : "EAD"}
+                                </span>
+                                
+                                <div className="ml-auto">
+                                    {renderPriceCell(course)}
+                                </div>
+                            </div>
+
+                            {/* Promoção Badge */}
+                            {isPromoted && (
+                                <div className="inline-flex items-center gap-1 px-2 py-1 rounded bg-red-900/20 text-red-400 border border-red-800 text-xs w-fit">
+                                    <Tag size={12} /> Em Promoção
+                                </div>
+                            )}
+
+                            {/* Ações */}
+                            <div className="grid grid-cols-3 gap-2 pt-3 border-t border-zinc-700 mt-1">
+                                <button onClick={() => handleEditCourse(course)} className="flex items-center justify-center gap-1 py-2 rounded bg-zinc-800 text-zinc-300 text-xs font-medium border border-zinc-700">
+                                    <Edit size={14} /> Editar
+                                </button>
+                                <button onClick={() => handleDuplicateCourse(course)} className="flex items-center justify-center gap-1 py-2 rounded bg-zinc-800 text-zinc-300 text-xs font-medium border border-zinc-700">
+                                    <Copy size={14} /> Duplicar
+                                </button>
+                                <button onClick={() => openConfirm("delete", course)} className="flex items-center justify-center gap-1 py-2 rounded bg-red-900/20 text-red-400 text-xs font-medium border border-red-900/30">
+                                    <Trash size={14} /> Excluir
+                                </button>
+                            </div>
+                        </div>
+                    );
+                })}
+                 {filteredCourses.length === 0 && (
+                     <div className="text-center py-8 text-zinc-500 text-sm">
+                         Nenhum curso encontrado.
+                     </div>
+                 )}
+            </div>
+
+            {/* ========== TABELA DESKTOP (Escondida no mobile com 'hidden md:block') ========== */}
             <div 
-                className={`bg-[${DARK_SHADE}] border border-zinc-700 rounded-xl overflow-hidden shadow-sm`}
+                className={`hidden md:block bg-[${DARK_SHADE}] border border-zinc-700 rounded-xl overflow-hidden shadow-sm mt-6`}
             >
               <table className="min-w-full text-sm">
                 <thead className={`bg-[${INPUT_BG}] text-zinc-400 uppercase tracking-wide font-semibold`}>

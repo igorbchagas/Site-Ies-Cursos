@@ -15,6 +15,12 @@ export function Header() {
 
     // Cor de Destaque
     const ACCENT_COLOR = "#E45B25"; // Laranja
+    
+    // DADOS WHATSAPP (Ajustados para o número e mensagem padrão)
+    const WHATSAPP_NUMBER = "5538988630487"; 
+    const WHATSAPP_MESSAGE = "Olá, gostaria de iniciar minha matrícula na Ies Cursos"; 
+    const whatsappUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(WHATSAPP_MESSAGE)}`;
+
 
     // Lógica para esconder o header ao rolar (MANTIDA)
     useEffect(() => {
@@ -37,7 +43,7 @@ export function Header() {
         return () => window.removeEventListener("scroll", handleScroll);
     }, []);
 
-    // Função centralizada de Scroll/Navegação
+    // Função centralizada de Scroll/Navegação (MANTIDA)
     const scrollToSection = (id: string, path = "/") => {
         if (location.pathname !== path) {
             navigate(path);
@@ -60,6 +66,13 @@ export function Header() {
         setIsCoursesDropdownOpen(false);
     };
     
+    // NOVA FUNÇÃO: Redireciona para o WhatsApp
+    const handleMatriculeClick = () => {
+        window.open(whatsappUrl, '_blank');
+        setIsMenuOpen(false);
+        setIsCoursesDropdownOpen(false);
+    };
+
     // Opções do Dropdown de Cursos
     const courseOptions = [
         { label: "Cursos Presenciais", action: () => scrollToSection("courses") },
@@ -75,14 +88,12 @@ export function Header() {
             } bg-black text-white`}
         >
             <div className="container mx-auto px-4">
-                {/* CORREÇÃO: Altura ajustada para mobile (h-16) e desktop (h-20) */}
                 <div className="flex justify-between items-center h-16 lg:h-20"> 
                     {/* Logo */}
                     <div 
                         onClick={() => scrollToSection("hero")} 
                         className="flex items-center gap-2 cursor-pointer transition-opacity hover:opacity-80"
                     >
-                        {/* CORREÇÃO: Logo redimensionada para mobile (h-8) */}
                         <img src={logo} alt="Logo IesCursos" className="h-8 lg:h-10 w-auto" />
                     </div>
 
@@ -148,9 +159,9 @@ export function Header() {
                             Fale Conosco
                         </button>
 
-                        {/* BOTÃO MATRICULE-SE: Fundo Laranja, Texto Branco */}
+                        {/* BOTÃO MATRICULE-SE: AGORA REDIRECIONA PARA O WHATSAPP */}
                         <button
-                            onClick={() => scrollToSection("simulator")}
+                            onClick={handleMatriculeClick}
                             className={`bg-[${ACCENT_COLOR}] py-2.5 px-6 rounded-full font-bold text-white transition-colors hover:bg-[#d66a1f] shadow-lg`}
                         >
                             Matricule-se
@@ -165,7 +176,7 @@ export function Header() {
                     </div>
                 </div>
 
-                {/* Menu Mobile (Ajustado) */}
+                {/* Menu Mobile */}
                 <div
                     className={`lg:hidden pb-4 space-y-3 transition-all duration-300 ease-in-out overflow-hidden bg-black text-white ${
                         isMenuOpen ? "max-h-96 opacity-100 mt-2" : "max-h-0 opacity-0 mt-0"
@@ -175,7 +186,7 @@ export function Header() {
                         Início
                     </button>
                     
-                    <h3 className="pt-2 font-semibold text-gray-400">Cursos</h3> {/* Reduzido negrito */}
+                    <h3 className="pt-2 font-semibold text-gray-400">Cursos</h3>
                     {courseOptions.map((option, index) => (
                         <button
                             key={index}
@@ -188,7 +199,6 @@ export function Header() {
 
                     <button
                         onClick={goToMoments}
-                        // CORREÇÃO: Removido font-bold para ser mais discreto
                         className={`block py-2 hover:text-[#E45B25] flex items-center gap-2`} 
                     >
                         <Camera className="w-4 h-4" /> Momentos
@@ -202,9 +212,9 @@ export function Header() {
                         Fale Conosco
                     </button>
 
+                    {/* BOTÃO MATRICULE-SE: AGORA REDIRECIONA PARA O WHATSAPP */}
                     <button
-                        onClick={() => scrollToSection("simulator")}
-                        // CORREÇÃO: Aumentado espaçamento superior para destacar
+                        onClick={handleMatriculeClick}
                         className={`bg-[${ACCENT_COLOR}] w-full py-2.5 rounded-full font-bold text-white mt-4 hover:bg-[#d66a1f]`} 
                     >
                         Matricule-se

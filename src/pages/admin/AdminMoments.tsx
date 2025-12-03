@@ -1,8 +1,6 @@
-// src/pages/admin/AdminMoments.tsx
-
 import { useEffect, useState, useMemo, useCallback } from "react";
-import { createPortal } from "react-dom"; // Import necessário para a Modal
-import { Trash, Upload, Camera, RefreshCcw, MonitorPlay, Maximize, AlertTriangle, Globe, Trash2, Loader2 } from "lucide-react"; 
+import { createPortal } from "react-dom"; 
+import { Trash, Upload, Camera, RefreshCcw, MonitorPlay, Maximize, AlertTriangle, Globe, Trash2, Loader2, Calendar } from "lucide-react"; 
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import { Moment } from "../../types";
@@ -17,7 +15,7 @@ const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
 const BUCKET_NAME = "images"; 
 
 // =========================================================================
-// MODAL DE CONFIRMAÇÃO (IDÊNTICA AO CÓDIGO FORNECIDO)
+// MODAL DE CONFIRMAÇÃO
 // =========================================================================
 interface ConfirmModalProps {
   open: boolean;
@@ -111,9 +109,9 @@ function StorageUsageBar({ used, total, percentage, isFull }: StorageState) {
 
     return (
         <div className="mt-4 p-4 bg-zinc-800 rounded-lg text-xs">
-            <div className="flex justify-between mb-1 text-zinc-400">
-                <span>Uso do Storage (Imagens) - Limite de 50 MB para uploads diretos (Simulação)</span>
-                <span className="font-semibold">{percentage.toFixed(1)}%</span>
+            <div className="flex flex-col sm:flex-row justify-between mb-1 text-zinc-400 gap-1">
+                <span>Uso do Storage (Imagens) <span className="hidden sm:inline">- Limite de 50 MB</span></span>
+                <span className="font-semibold">{percentage.toFixed(1)}% ({formatSize(used)} / {formatSize(total)})</span>
             </div>
             <div className="w-full bg-zinc-700 rounded-full h-2.5">
                 <div 
@@ -121,18 +119,15 @@ function StorageUsageBar({ used, total, percentage, isFull }: StorageState) {
                     style={{ width: `${Math.min(percentage, 100)}%` }} 
                 />
             </div>
-            <p className="text-right text-zinc-500 mt-1">
-                {formatSize(used)} / {formatSize(total)}
-            </p>
             
             {isFull && (
                 <div className="mt-3 p-2 bg-red-800/50 border border-red-700 rounded-md flex items-center gap-2 text-red-300">
-                    <AlertTriangle size={16} />
-                    <span className="font-bold">ARMAZENAMENTO CHEIO! Uploads de arquivos bloqueados.</span>
+                    <AlertTriangle size={16} className="flex-shrink-0" />
+                    <span className="font-bold">ARMAZENAMENTO CHEIO!</span>
                 </div>
             )}
-            <p className="mt-2 text-yellow-400">
-                **DICA:** Use YouTube/Vimeo/Instagram para mídias externas (URL), pois não consomem seu espaço no Supabase.
+            <p className="mt-2 text-yellow-400 leading-relaxed">
+                **DICA:** Use YouTube/Vimeo/Instagram para mídias externas, pois não consomem espaço.
             </p>
         </div>
     );
@@ -395,7 +390,8 @@ export default function AdminMoments() {
 
 
     return (
-        <div className={`space-y-6 p-6 md:p-8 bg-[${DARK_BACKGROUND}] rounded-xl text-[${TEXT_COLOR}]`}>
+        // Padding reduzido no mobile
+        <div className={`space-y-6 p-4 md:p-8 bg-[${DARK_BACKGROUND}] rounded-xl text-[${TEXT_COLOR}]`}>
             {/* Título e cabeçalho */}
             <div className="flex items-center gap-3 mb-6">
                 <div 
@@ -405,7 +401,7 @@ export default function AdminMoments() {
                     <Camera size={20} className="text-white" />
                 </div>
                 <div>
-                    <h1 className={`text-xl font-bold`} style={{ color: TEXT_COLOR }}>Gerenciar Galeria de Momentos</h1>
+                    <h1 className={`text-xl font-bold`} style={{ color: TEXT_COLOR }}>Gerenciar Galeria</h1>
                     <span className="text-sm text-zinc-400">{moments.length} foto(s) na galeria</span>
                 </div>
             </div>
@@ -416,19 +412,20 @@ export default function AdminMoments() {
                     <Upload size={16} style={{ color: ACCENT_COLOR }} /> 1. Escolha o tipo de Mídia
                 </h2>
                 
-                <div className="grid md:grid-cols-2 gap-4">
+                {/* Grid responsivo: col-1 no mobile, col-2 no desktop */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <button
                         onClick={() => handleSetUploadType('file')}
                         className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg text-sm font-semibold transition-colors ${uploadType === 'file' ? `bg-[${ACCENT_COLOR}] text-white` : 'bg-zinc-700 text-zinc-200 hover:bg-zinc-600'}`}
                         disabled={storageUsage.isFull}
                     >
-                        <Maximize size={16} /> Upload de Imagem (max 5MB)
+                        <Maximize size={16} /> Upload de Imagem
                     </button>
                     <button
                         onClick={() => handleSetUploadType('url')}
                         className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg text-sm font-semibold transition-colors ${uploadType === 'url' ? `bg-[${ACCENT_COLOR}] text-white` : 'bg-zinc-700 text-zinc-200 hover:bg-zinc-600'}`}
                     >
-                        <Globe size={16} /> Mídia Externa (Link da Postagem)
+                        <Globe size={16} /> Mídia Externa (Link)
                     </button>
                 </div>
                 
@@ -454,7 +451,7 @@ export default function AdminMoments() {
                     ) : (
                         <div className="flex flex-col gap-1">
                             <label className="text-xs font-semibold text-zinc-400 uppercase tracking-wide">
-                                URL da Postagem (Instagram/YouTube) (Obrigatório)
+                                URL da Postagem (Obrigatório)
                             </label>
                             <input
                                 type="url"
@@ -466,9 +463,6 @@ export default function AdminMoments() {
                             {errorFileOrUrl && uploadType === 'url' && (
                                 <p className="text-xs text-red-400 mt-1 flex items-center gap-1"><AlertTriangle size={12} /> É obrigatório informar a URL da postagem.</p>
                             )}
-                            <p className="text-xs text-zinc-500 mt-1">
-                                **Dica:** Insira o link da postagem (ex: instagram.com/p/...), e não um código iframe.
-                            </p>
                         </div>
                     )}
                 </div>
@@ -489,7 +483,8 @@ export default function AdminMoments() {
                         <Camera size={16} style={{ color: ACCENT_COLOR }} /> 2. Informações do Momento
                     </h2>
 
-                    <div className="grid md:grid-cols-3 gap-4">
+                    {/* Grid responsivo: 1 coluna mobile, 3 colunas desktop */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div className="flex flex-col gap-1">
                             <label className="text-xs font-semibold text-zinc-400 uppercase tracking-wide">Título (Obrigatório)</label>
                             <input
@@ -519,7 +514,7 @@ export default function AdminMoments() {
                         </div>
 
                         <div className="flex flex-col gap-1">
-                            <label className="text-xs font-semibold text-zinc-400 uppercase tracking-wide">Data do Evento (Obrigatório)</label>
+                            <label className="text-xs font-semibold text-zinc-400 uppercase tracking-wide">Data (Obrigatório)</label>
                             <input
                                 type="date"
                                 value={newDate}
@@ -567,7 +562,7 @@ export default function AdminMoments() {
             {/* === LISTA DE MOMENTOS === */}
             <div className={`p-4 rounded-xl bg-[${DARK_SHADE}] border border-zinc-700`}>
                 <div className="flex justify-between items-center mb-4">
-                    <h2 className="text-base font-bold text-zinc-300">Fotos Atuais</h2>
+                    <h2 className="text-base font-bold text-zinc-300">Galeria Atual</h2>
                     <button
                         onClick={() => loadMoments(true)}
                         className="flex items-center gap-1 text-xs text-zinc-400 hover:text-white transition-colors"
@@ -580,53 +575,113 @@ export default function AdminMoments() {
                 {loading && <p className="text-center text-zinc-500 py-4">Carregando fotos...</p>}
 
                 {!loading && moments.length > 0 && (
-                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
-                        <AnimatePresence>
+                    <>
+                        {/* ======================= */}
+                        {/* MODO MOBILE: LISTA DE CARDS (Sem hover, botões visíveis) */}
+                        {/* ======================= */}
+                        <div className="md:hidden space-y-4">
                             {moments.map((moment) => (
-                                <motion.div
-                                    key={moment.id}
-                                    initial={{ opacity: 0, scale: 0.9 }}
-                                    animate={{ opacity: 1, scale: 1 }}
-                                    exit={{ opacity: 0, scale: 0.9 }}
-                                    transition={{ duration: 0.2 }}
-                                    className="relative group aspect-square rounded-lg overflow-hidden border border-zinc-700"
-                                >
-                                    {moment.type === 'image' ? (
-                                        <img 
-                                            src={moment.src} 
-                                            alt={moment.title} 
-                                            className="w-full h-full object-cover"
-                                            loading="lazy"
-                                        />
-                                    ) : (
-                                        <div className="w-full h-full flex items-center justify-center bg-gray-900 text-white/50">
-                                            <MonitorPlay size={32} />
-                                        </div>
-                                    )}
-
-                                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-between p-2">
-                                        <button
-                                            onClick={() => requestDelete(moment)}
-                                            className="self-end p-1 bg-red-600 rounded-full text-white hover:bg-red-700 transition"
-                                            title="Excluir Foto"
-                                        >
-                                            <Trash size={14} />
-                                        </button>
-                                        <div className="text-white text-xs">
-                                            <p className="font-bold truncate">{moment.title}</p>
-                                            <p className="text-zinc-300 text-[10px]">{moment.description}</p>
-                                            <p className="text-zinc-400 text-[10px] mt-1">
-                                                Data: {moment.event_date ? new Date(moment.event_date).toLocaleDateString('pt-BR', {timeZone: 'UTC'}) : 'N/A'}
-                                            </p>
+                                <div key={moment.id} className="bg-zinc-900 border border-zinc-800 rounded-lg overflow-hidden flex flex-col">
+                                    <div className="relative aspect-video w-full bg-zinc-950">
+                                         {moment.type === 'image' ? (
+                                            <img 
+                                                src={moment.src} 
+                                                alt={moment.title} 
+                                                className="w-full h-full object-cover"
+                                                loading="lazy"
+                                            />
+                                        ) : (
+                                            <div className="w-full h-full flex items-center justify-center text-white/50">
+                                                <MonitorPlay size={32} />
+                                            </div>
+                                        )}
+                                        <div className="absolute top-2 right-2 bg-black/60 text-white text-[10px] px-2 py-0.5 rounded capitalize">
+                                            {moment.category}
                                         </div>
                                     </div>
-                                </motion.div>
+                                    
+                                    <div className="p-3 flex flex-col gap-2">
+                                        <div className="flex justify-between items-start">
+                                            <div>
+                                                <h3 className="font-bold text-white text-sm">{moment.title}</h3>
+                                                <p className="text-xs text-zinc-400 mt-0.5 flex items-center gap-1">
+                                                    <Calendar size={10} />
+                                                    {moment.event_date ? new Date(moment.event_date).toLocaleDateString('pt-BR', {timeZone: 'UTC'}) : 'N/A'}
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <p className="text-xs text-zinc-500 line-clamp-2">{moment.description}</p>
+                                        
+                                        <button 
+                                            onClick={() => requestDelete(moment)}
+                                            className="mt-2 w-full py-2 bg-red-900/20 text-red-400 border border-red-900/50 rounded flex items-center justify-center gap-2 text-xs font-semibold active:bg-red-900/40"
+                                        >
+                                            <Trash2 size={14} /> Excluir Foto
+                                        </button>
+                                    </div>
+                                </div>
                             ))}
-                        </AnimatePresence>
-                    </div>
+                        </div>
+
+                        {/* ======================= */}
+                        {/* MODO DESKTOP: GRID COM HOVER (Original) */}
+                        {/* ======================= */}
+                        <div className="hidden md:grid grid-cols-3 lg:grid-cols-5 gap-4">
+                            <AnimatePresence>
+                                {moments.map((moment) => (
+                                    <motion.div
+                                        key={moment.id}
+                                        initial={{ opacity: 0, scale: 0.9 }}
+                                        animate={{ opacity: 1, scale: 1 }}
+                                        exit={{ opacity: 0, scale: 0.9 }}
+                                        transition={{ duration: 0.2 }}
+                                        className="relative group aspect-square rounded-lg overflow-hidden border border-zinc-700 bg-zinc-900"
+                                    >
+                                        {moment.type === 'image' ? (
+                                            <img 
+                                                src={moment.src} 
+                                                alt={moment.title} 
+                                                className="w-full h-full object-cover"
+                                                loading="lazy"
+                                            />
+                                        ) : (
+                                            <div className="w-full h-full flex items-center justify-center text-white/50">
+                                                <MonitorPlay size={32} />
+                                            </div>
+                                        )}
+
+                                        <div className="absolute inset-0 bg-black/80 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-between p-3">
+                                            <div className="flex justify-between items-start">
+                                                <span className="bg-orange-600 text-white text-[10px] px-1.5 py-0.5 rounded uppercase font-bold tracking-wider">
+                                                    {moment.category}
+                                                </span>
+                                                <button
+                                                    onClick={() => requestDelete(moment)}
+                                                    className="p-1.5 bg-red-600 rounded-full text-white hover:bg-red-700 transition shadow-lg"
+                                                    title="Excluir Foto"
+                                                >
+                                                    <Trash size={14} />
+                                                </button>
+                                            </div>
+                                            
+                                            <div className="text-white text-xs">
+                                                <p className="font-bold truncate text-sm mb-1">{moment.title}</p>
+                                                <p className="text-zinc-300 text-[10px] line-clamp-2 leading-relaxed">{moment.description}</p>
+                                                <p className="text-zinc-500 text-[10px] mt-2 flex items-center gap-1">
+                                                    <Calendar size={10} />
+                                                    {moment.event_date ? new Date(moment.event_date).toLocaleDateString('pt-BR', {timeZone: 'UTC'}) : 'N/A'}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </motion.div>
+                                ))}
+                            </AnimatePresence>
+                        </div>
+                    </>
                 )}
+                
                 {!loading && moments.length === 0 && (
-                    <p className="text-center text-zinc-500 py-4">Nenhuma foto na galeria.</p>
+                    <p className="text-center text-zinc-500 py-8">Nenhuma foto na galeria.</p>
                 )}
             </div>
 
