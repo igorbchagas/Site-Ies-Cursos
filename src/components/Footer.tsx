@@ -49,7 +49,7 @@ export function Footer() {
                     <div>
                         {/* LOGO - APLICANDO O CLIQUE AQUI */}
                         <div 
-                            className="flex items-center gap-2 mb-4 cursor-pointer" // Adicionado cursor-pointer
+                            className="flex items-center gap-2 mb-4 cursor-default" // Adicionado cursor-default
                             onClick={handleLogoClick} // Chama a função no clique
                             title="Clique 3 vezes para acessar a área administrativa" // Dica discreta
                         >
