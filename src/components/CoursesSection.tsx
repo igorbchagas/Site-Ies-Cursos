@@ -100,7 +100,7 @@ export function CoursesSection({
               className="text-center mb-8 sm:mb-12"
             >
               <span className="text-[#ff5722] font-semibold text-base sm:text-lg">
-                Cursos EAD
+                Cursos Profissionalizantes EAD
               </span>
               <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mt-2 mb-4">
                 Estude de Onde Estiver

@@ -4,7 +4,6 @@ import { supabase } from "../lib/supabaseClient";
 import { Moment } from "../types";
 
 const MOMENTS_TABLE = "momentos";
-const STORAGE_BUCKET = "images";
 
 export interface StorageUsage {
     total: number;

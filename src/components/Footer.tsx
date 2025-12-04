@@ -63,7 +63,7 @@ export function Footer() {
               </div>
               <div className="flex items-start gap-2">
                 <Mail className={`w-5 h-5 text-[${ACCENT_COLOR}] flex-shrink-0 mt-0.5`} />
-                <p className="text-gray-400 text-sm">iescursos@gmail.com.br</p>
+                <p className="text-gray-400 text-sm">iescursosunai@gmail.com.br</p>
               </div>
             </div>
           </div>
@@ -101,7 +101,7 @@ export function Footer() {
         </div>
 
         <div className="border-t border-gray-800 pt-8 mt-8 text-center text-gray-500">
-          <p>&copy; {new Date().getFullYear()} IesCursos. Todos os direitos reservados. | Desenvolvido por Arroiz e Eduardo.</p>
+          <p>&copy; {new Date().getFullYear()} IesCursos. Todos os direitos reservados.</p>
         </div>
       </div>
     </footer>

@@ -146,7 +146,7 @@ export function Contact() {
                             </div>
                             <div className="flex items-center gap-4">
                                 <Mail className="w-7 h-7 text-[#ff5722] flex-shrink-0" />
-                                <span className="text-gray-300">iescursos@gmail.com.br</span>
+                                <span className="text-gray-300">iescursosunai@gmail.com.br</span>
                             </div>
                         </div>
                     </div>
