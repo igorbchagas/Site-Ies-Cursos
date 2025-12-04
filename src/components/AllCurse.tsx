@@ -89,7 +89,7 @@ export default function AllCurse({
     ];
 
     return (
-        <section className="min-h-screen pt-32 pb-20 bg-gray-50">
+        <section className="min-h-screen pt-12 lg:pt-32 pb-20 bg-gray-50">
             <div className="container mx-auto px-4">
                 
                 {/* === TÍTULO E BOTÃO VOLTAR === */}
