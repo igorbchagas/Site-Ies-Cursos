@@ -92,7 +92,7 @@ export function Hero() {
     
     // Gradientes e cores para o novo visual
     const LIGHT_GRADIENT = "from-[#ff5722] to-[#FF9E40]";
-    const DARK_BACKGROUND = "bg-zinc-950"; // Fundo mais escuro para maior contraste
+    const DARK_BACKGROUND = "bg-zinc-75"; // Fundo mais escuro para maior contraste
 
     // URL da imagem padrão (usada tanto no desktop quanto no mobile com overlay)
     const STANDARD_IMAGE_URL = "https://images.pexels.com/photos/3184418/pexels-photo-3184418.jpeg?auto=compress&cs=tinysrgb&w=800";
