@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState, FormEvent, HTMLProps } from "react";
 import { createPortal } from "react-dom";
-import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Plus,
@@ -15,12 +14,10 @@ import {
   Save,
   X,
   RotateCw,
-  ExternalLink,
   Tag
 } from "lucide-react";
 import { toast } from "sonner";
 import { Course } from "../../types";
-import { useAuth } from "../../context/AuthContext";
 import { courseService } from "../../services/courseService";
 
 // Cores Padronizadas (Tema Escuro)
@@ -771,9 +768,6 @@ export default function AdminCourses() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [confirmError, setConfirmError] = useState("");
 
-  const navigate = useNavigate();
-  const { logout } = useAuth();
-
   async function loadCourses(showToast = false) {
     try {
       setLoading(true);
@@ -1009,18 +1003,6 @@ export default function AdminCourses() {
                 >
                   <RotateCw size={14} />
                   <span className="hidden sm:inline">Atualizar</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    logout();
-                    navigate("/");
-                  }}
-                  className="flex items-center gap-2 px-3 py-2 rounded-lg border border-zinc-700 text-xs text-zinc-200 hover:bg-zinc-800 transition-colors shadow-sm"
-                >
-                  <ExternalLink size={14} />
-                  <span className="hidden sm:inline">Sair do Admin</span>
                 </button>
 
                 <button

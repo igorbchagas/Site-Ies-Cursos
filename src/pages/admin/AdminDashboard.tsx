@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { motion, Variants } from "framer-motion";
 import {
   Users,
@@ -7,7 +6,6 @@ import {
   Image as ImageIcon,
   Calendar,
   LayoutDashboard,
-  ExternalLink,
   LucideIcon
 } from "lucide-react";
 import { AdminBanners } from "./AdminBanners";
@@ -30,7 +28,6 @@ const DARK_BACKGROUND = "#18181B";
 const TEXT_COLOR = "#FAFAFA"; 
 
 export default function AdminDashboard() {
-  const navigate = useNavigate();
   
   const [stats, setStats] = useState({
     totalCourses: 0,
@@ -108,16 +105,6 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        <div className="flex flex-wrap gap-2 justify-start md:justify-end">
-          <button
-            type="button"
-            onClick={() => navigate("/")}
-            className="flex items-center gap-2 px-3 py-2 rounded-lg border border-zinc-700 bg-zinc-900 text-xs text-zinc-200 hover:bg-zinc-800 transition-colors"
-          >
-            <ExternalLink size={14} />
-            Voltar ao site
-          </button>
-        </div>
       </div>
 
       {/* --- CARDS DE ESTATÍSTICAS --- */}

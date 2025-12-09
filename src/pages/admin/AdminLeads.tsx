@@ -1,10 +1,9 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Users, Phone, Clock, Layers, MessageCircle, CheckCircle, XCircle, RotateCw, ExternalLink } from "lucide-react";
+import { Users, Phone, Clock, Layers, MessageCircle, CheckCircle, XCircle, RotateCw } from "lucide-react";
 import { toast } from "sonner";
 import { leadService } from "../../services/leadService";
 import { createPortal } from "react-dom";
-import { useNavigate } from "react-router-dom";
 
 // Interface local
 interface Lead {
@@ -134,7 +133,6 @@ export default function AdminLeads() {
     const [leads, setLeads] = useState<Lead[]>([]);
     const [loading, setLoading] = useState(true);
     const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
-    const navigate = useNavigate();
 
     useEffect(() => {
         loadLeads();
@@ -200,15 +198,6 @@ export default function AdminLeads() {
                 </div>
 
                 <div className="flex flex-wrap gap-2 justify-start md:justify-end">
-                    <button
-                        type="button"
-                        onClick={() => navigate("/")}
-                        className="flex items-center gap-2 px-3 py-2 rounded-lg border border-zinc-700 text-xs text-zinc-200 hover:bg-zinc-800 transition-colors"
-                    >
-                        <ExternalLink size={14} />
-                        Voltar ao site
-                    </button>
-
                     <button
                         onClick={() => loadLeads(true)}
                         className="flex items-center gap-2 px-3 py-2 rounded-lg border border-zinc-700 text-xs text-zinc-200 hover:bg-zinc-800 transition-colors"
