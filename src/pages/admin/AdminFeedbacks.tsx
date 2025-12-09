@@ -48,18 +48,20 @@ const scrollbarStyle = `
 `;
 
 // ==========================================
-// 1. MODAL DE VISUALIZAÇÃO
+// 1. MODAL DE VISUALIZAÇÃO (PERFORMANCE OTIMIZADA)
 // ==========================================
 function ViewModal({ feedback, onClose }: { feedback: Feedback | null, onClose: () => void }) {
     useEffect(() => {
-        const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
-        document.body.style.overflow = 'hidden';
-        document.body.style.paddingRight = `${scrollbarWidth}px`;
+        if (feedback) {
+            const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
+            document.body.style.overflow = 'hidden';
+            document.body.style.paddingRight = `${scrollbarWidth}px`;
+        }
         return () => { 
             document.body.style.overflow = 'unset'; 
             document.body.style.paddingRight = '0px';
         };
-    }, []);
+    }, [feedback]);
 
     if (!feedback) return null;
 
@@ -71,17 +73,16 @@ function ViewModal({ feedback, onClose }: { feedback: Feedback | null, onClose: 
                 initial={{ opacity: 0 }} 
                 animate={{ opacity: 1 }} 
                 exit={{ opacity: 0 }}
-                transition={{ duration: 0.2 }}
-                className="absolute inset-0 bg-black/70 backdrop-blur-sm" 
+                className="absolute inset-0 bg-black/80 backdrop-blur-sm" 
                 onClick={onClose} 
             />
             
             <motion.div
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.95 }}
-                transition={{ duration: 0.2, ease: "easeOut" }} // Animação mais seca e rápida, sem "mola"
-                className="relative bg-zinc-900 border border-zinc-700/50 rounded-2xl w-full max-w-lg shadow-2xl z-10 flex flex-col max-h-[85vh] overflow-hidden"
+                initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: 10 }}
+                transition={{ duration: 0.2 }}
+                className="relative bg-zinc-900 border border-zinc-700 rounded-2xl w-full max-w-lg shadow-2xl z-10 flex flex-col max-h-[85vh] overflow-hidden"
             >
                 <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-b from-orange-500/10 to-transparent pointer-events-none" />
 
@@ -137,7 +138,7 @@ function ViewModal({ feedback, onClose }: { feedback: Feedback | null, onClose: 
 }
 
 // ==========================================
-// 2. MODAL DE EXCLUSÃO
+// 2. MODAL DE EXCLUSÃO (PERFORMANCE OTIMIZADA)
 // ==========================================
 interface ConfirmModalProps {
   open: boolean;
@@ -169,10 +170,9 @@ function DeleteModal({ open, onCancel, onConfirm, isLoading }: ConfirmModalProps
         onClick={onCancel} 
       />
       <motion.div
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        exit={{ opacity: 0, scale: 0.95 }}
-        transition={{ duration: 0.15 }} // Rápido e direto
+        initial={{ opacity: 0, scale: 0.95, y: 10 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.95, y: 10 }}
         className="relative bg-zinc-900 border border-zinc-700 rounded-2xl p-6 w-full max-w-sm shadow-2xl z-10"
       >
         <div className="flex flex-col items-center text-center gap-4">
@@ -283,12 +283,10 @@ export default function AdminFeedbacks() {
                 </div>
             </div>
 
-            {/* Abas - Botões Corrigidos (Sem piscar) */}
+            {/* Abas */}
             <div className="flex p-1.5 bg-zinc-900 border border-zinc-800 rounded-xl w-full md:w-fit overflow-x-auto shadow-sm">
                 <button 
                     onClick={() => setActiveTab('visible')} 
-                    // Adicionei outline-none e ring-0 para remover o flash branco do navegador
-                    // Adicionei border-transparent no estado inativo para manter o tamanho do box-model constante
                     className={`flex-1 md:flex-none whitespace-nowrap px-6 py-2 rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-2 outline-none focus:outline-none ring-0
                         ${activeTab === 'visible' 
                             ? 'bg-zinc-800 text-white shadow border border-zinc-700' 
@@ -307,23 +305,21 @@ export default function AdminFeedbacks() {
                 </button>
             </div>
 
-            {/* Lista com Animação FADE (Sem "Cheguei") */}
+            {/* Lista com Animação OTIMIZADA (Igual AdminMoments) */}
             {loading ? (
                 <div className="flex flex-col items-center justify-center h-64 text-zinc-500 gap-3">
                     <Loader2 className="w-8 h-8 animate-spin text-orange-500" />
                     <span>Carregando...</span>
                 </div>
             ) : (
-                <motion.div layout className="min-h-[300px] relative">
-                    <AnimatePresence mode="popLayout" initial={false}>
+                <div className="min-h-[300px]">
+                    <AnimatePresence>
                         {currentList.length === 0 ? (
                             <motion.div 
                                 key="empty"
-                                // Fade simples
                                 initial={{ opacity: 0 }} 
                                 animate={{ opacity: 1 }} 
                                 exit={{ opacity: 0 }}
-                                transition={{ duration: 0.2 }}
                                 className="flex flex-col items-center justify-center py-20 bg-zinc-900/30 rounded-2xl border border-zinc-800 border-dashed w-full"
                             >
                                 <div className="w-16 h-16 bg-zinc-900 rounded-full flex items-center justify-center mb-4">
@@ -332,18 +328,17 @@ export default function AdminFeedbacks() {
                                 <p className="text-zinc-500 font-medium">Nenhum depoimento aqui.</p>
                             </motion.div>
                         ) : (
-                            <motion.div 
-                                key={activeTab} 
-                                // Animação "Menos Cheguei": Apenas opacidade e um deslocamento mínimo (5px)
-                                initial={{ opacity: 0, y: 5 }} 
-                                animate={{ opacity: 1, y: 0 }} 
-                                exit={{ opacity: 0, y: -5 }} 
-                                transition={{ duration: 0.25, ease: "easeOut" }} // Sem molas, apenas linear suave
-                                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 w-full"
-                            >
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 w-full">
                                 {currentList.map((item) => (
-                                    <div key={item.id} className={`group relative p-6 rounded-2xl border flex flex-col justify-between h-full transition-all hover:shadow-xl ${item.approved ? 'bg-zinc-900/80 border-green-500/20' : 'bg-zinc-900/50 border-zinc-800'}`}>
-                                        
+                                    <motion.div 
+                                        key={item.id}
+                                        layout
+                                        initial={{ opacity: 0, scale: 0.9 }}
+                                        animate={{ opacity: 1, scale: 1 }}
+                                        exit={{ opacity: 0, scale: 0.9 }}
+                                        transition={{ duration: 0.2 }}
+                                        className={`group relative p-6 rounded-2xl border flex flex-col justify-between h-full transition-shadow hover:shadow-xl ${item.approved ? 'bg-zinc-900/80 border-green-500/20' : 'bg-zinc-900/50 border-zinc-800'}`}
+                                    >
                                         <div className="absolute top-5 right-5 z-10">
                                             {item.approved 
                                                 ? <span className="flex items-center gap-1.5 px-2 py-0.5 bg-green-500/10 text-green-400 text-[10px] uppercase font-bold rounded-full border border-green-500/20"><div className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" /> Visível</span>
@@ -402,12 +397,12 @@ export default function AdminFeedbacks() {
                                                 </button>
                                             </div>
                                         </div>
-                                    </div>
+                                    </motion.div>
                                 ))}
-                            </motion.div>
+                            </div>
                         )}
                     </AnimatePresence>
-                </motion.div>
+                </div>
             )}
 
             <AnimatePresence>
