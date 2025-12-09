@@ -87,6 +87,9 @@ export function Footer() {
                             <li>
                                 <a href="/momentos" className={`text-gray-400 hover:text-[${ACCENT_COLOR}] transition-colors`}>Momentos</a>
                             </li>
+                            <li>
+                                <a href="#depoimentos" className={`text-gray-400 hover:text-[${ACCENT_COLOR}] transition-colors`}>Feedbacks</a>
+                            </li>
                         </ul>
                     </div>
 
