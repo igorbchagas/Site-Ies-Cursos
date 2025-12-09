@@ -1,5 +1,19 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Lock, AlertTriangle, User, TrendingUp, TrendingDown, RefreshCw, MapPin, CheckCircle, FileText, Calendar, Clock, Image } from 'lucide-react'; // Adicionei Image para Moments/Banners
+import { 
+    Lock, 
+    AlertTriangle, 
+    User, 
+    TrendingUp, 
+    TrendingDown, 
+    RefreshCw, 
+    MapPin, 
+    CheckCircle, 
+    FileText, 
+    Calendar, 
+    Clock, 
+    Image,
+    MessageSquareQuote // 🆕 Ícone para Feedbacks
+} from 'lucide-react';
 import { auditService } from '../../services/auditService';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -21,7 +35,7 @@ interface AugmentedAuditLog {
 // Novo tipo para controlar a aba
 type AuditTab = 'login' | 'audit';
 
-// Componente auxiliar de carregamento (mantido)
+// Componente auxiliar de carregamento
 const LoadingSkeleton = () => (
     <motion.div 
         key="loading" 
@@ -53,7 +67,6 @@ export default function AdminAudit() {
     const [filterUser, setFilterUser] = useState('all'); // Filtra por email
     const [filterTable, setFilterTable] = useState('all'); // Filtra por tabela
 
-
     const openModal = (log: AugmentedAuditLog) => {
         setSelectedLog(log);
         setIsModalOpen(true);
@@ -63,7 +76,6 @@ export default function AdminAudit() {
         setIsModalOpen(false);
         setSelectedLog(null);
     };
-
 
     const loadData = async () => {
         setLoadingAudit(true);
@@ -105,31 +117,23 @@ export default function AdminAudit() {
         loadData();
     }, []);
     
-    // LÓGICA DE FILTRAGEM (CORREÇÃO FINAL: FORÇANDO INTERPRETAÇÃO UTC NO LOG)
+    // LÓGICA DE FILTRAGEM
     const filteredAuditLogs = useMemo(() => {
         let list = auditLogs;
 
         // 1. Filtrar por Dia
         if (filterDay) {
-            
-            // 1.1. Início do dia selecionado em UTC (Filtro Start)
             const parts = filterDay.split('-').map(Number);
             const startDateUTC = new Date(Date.UTC(parts[0], parts[1] - 1, parts[2], 0, 0, 0));
-            
-            // 1.2. Início do próximo dia em UTC (Filtro End)
             const endDateUTC = new Date(startDateUTC);
             endDateUTC.setUTCDate(startDateUTC.getUTCDate() + 1);
 
-            // Filtra se o log.changed_at está DENTRO do intervalo [startDate, endDate[
             list = list.filter(log => {
-                // CORREÇÃO CRÍTICA: TRATAMENTO DA STRING DE DATA DO BANCO
                 const logDateString = log.changed_at.endsWith('Z') || log.changed_at.includes('+')
                     ? log.changed_at 
                     : log.changed_at.replace(' ', 'T') + 'Z';
                 
                 const logDate = new Date(logDateString); 
-
-                // Compara em milissegundos UTC (getTime())
                 return logDate.getTime() >= startDateUTC.getTime() && logDate.getTime() < endDateUTC.getTime();
             });
         }
@@ -147,17 +151,17 @@ export default function AdminAudit() {
         return list;
     }, [auditLogs, filterDay, filterUser, filterTable]);
     
-    // Opções únicas para os Selects (Memoize para performance)
+    // Opções únicas para os Selects
     const uniqueUserEmails = useMemo(() => {
         const emails = new Set(auditLogs.map(log => log.changed_by_user_email).filter(e => e && e !== 'all'));
         return Array.from(emails).sort(); 
     }, [auditLogs]);
 
     const uniqueTables = useMemo(() => {
-        // CORREÇÃO AQUI: Garante que as novas tabelas estejam sempre na lista de filtros
         const tables = new Set([
             'banners', 
-            'moments', // NOVA TABELA ADICIONADA AQUI
+            'moments',
+            'feedbacks', // 🆕 ADICIONADO AQUI
             ...auditLogs.map(log => log.table_name).filter(t => t && t !== 'all')
         ]);
         return Array.from(tables).sort(); 
@@ -168,7 +172,7 @@ export default function AdminAudit() {
     const formatDate = (dateString: string) => 
         new Date(dateString).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'medium' });
 
-    // Função para renderizar o User Agent (MANTIDA)
+    // Função para renderizar o User Agent
     const renderUserAgent = (userAgent: string | null | undefined) => {
         if (!userAgent || typeof userAgent !== 'string') {
             return (
@@ -197,13 +201,13 @@ export default function AdminAudit() {
                 return <Image size={14} className="text-purple-400" />;
             case 'courses':
                 return <FileText size={14} className="text-green-400" />;
+            case 'feedbacks': // 🆕 ADICIONADO AQUI
+                return <MessageSquareQuote size={14} className="text-yellow-400" />;
             default:
                 return <FileText size={14} className="text-zinc-400" />;
         }
     }
 
-
-    // Variantes de animação para as linhas da tabela (MANTIDAS)
     const rowVariants = {
         hidden: { opacity: 0, y: 10 },
         visible: (i: number) => ({
@@ -217,7 +221,6 @@ export default function AdminAudit() {
         exit: { opacity: 0 }
     };
 
-
     return (
         <div className="p-4 md:p-6 space-y-8">
             <h1 className="text-2xl md:text-3xl font-bold text-white flex items-center gap-3">
@@ -226,9 +229,7 @@ export default function AdminAudit() {
                 <span className="sm:hidden">Auditoria</span>
             </h1>
             
-            {/* ======================================= */}
             {/* NAVEGAÇÃO POR TABS */}
-            {/* ======================================= */}
             <div className="flex bg-zinc-800 p-1.5 md:p-2 rounded-xl shadow-inner border border-zinc-700 max-w-lg mx-auto">
                 <button
                     onClick={() => setActiveTab('login')}
@@ -252,11 +253,9 @@ export default function AdminAudit() {
                 </button>
             </div>
 
-            {/* ======================================= */}
             {/* CONTEÚDO CONDICIONAL POR TAB */}
-            {/* ======================================= */}
             <AnimatePresence mode="wait">
-                {/* Logs de Login (Conteúdo) */}
+                {/* Logs de Login */}
                 {activeTab === 'login' && (
                     <motion.div 
                         key="login-tab"
@@ -356,7 +355,7 @@ export default function AdminAudit() {
                     </motion.div>
                 )}
 
-                {/* Logs de Auditoria (Alterações de Conteúdo) */}
+                {/* Logs de Auditoria */}
                 {activeTab === 'audit' && (
                     <motion.div 
                         key="audit-tab"
@@ -370,7 +369,7 @@ export default function AdminAudit() {
                              <User size={20} className="text-orange-400" /> Alterações de Conteúdo
                         </h2>
                         
-                        {/* NOVO: BARRA DE FILTRO */}
+                        {/* BARRA DE FILTRO */}
                         <div className="flex flex-col md:flex-row flex-wrap gap-4 mb-6 p-4 bg-zinc-800 rounded-lg border border-zinc-700">
                             {/* Filtro por Dia */}
                             <div className="flex items-center gap-2 w-full md:w-auto">

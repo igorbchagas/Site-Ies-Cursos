@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { LayoutDashboard, BookOpen, Users, AlertTriangle, Camera, X } from "lucide-react";
+import { LayoutDashboard, BookOpen, Users, AlertTriangle, Camera, X, MessageSquareQuote } from "lucide-react";
 
 const menuItems = [
   {
@@ -21,6 +21,11 @@ const menuItems = [
     label: "Momentos",
     icon: Camera,
     to: "/ies-admin/moments"
+  },
+  {
+    label: "Feedbacks",
+    icon: MessageSquareQuote,
+    to: "/ies-admin/feedbacks"
   },
   { 
     label: ".Log",

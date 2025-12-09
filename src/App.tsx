@@ -5,6 +5,7 @@ import { Toaster } from "sonner";
 import Home from "./pages/Home";
 import AllCourses from "./pages/AllCourses";
 import Moments from './pages/Moments'; 
+import Feedback from './pages/Feedback'; // 🆕 Import da Página Pública de Feedback
 
 import { ScrollToTop } from "./components/ScrollToTop";
 import ProtectedRoute from "./components/ProtectedRoute"; 
@@ -26,6 +27,7 @@ const AdminCourses = React.lazy(() => import("./pages/admin/AdminCourses"));
 const AdminLeads = React.lazy(() => import("./pages/admin/AdminLeads")); 
 const AdminAudit = React.lazy(() => import("./pages/admin/AdminAudit"));
 const AdminMoments = React.lazy(() => import("./pages/admin/AdminMoments")); 
+const AdminFeedbacks = React.lazy(() => import("./pages/admin/AdminFeedbacks")); // 🆕 Import Lazy do Admin de Feedbacks
 
 // ------------------------------------------
 
@@ -38,6 +40,7 @@ export default function App() {
         <Route path="/" element={<Home />} />
         <Route path="/cursos" element={<AllCourses />} />
         <Route path="/momentos" element={<Moments />} />
+        <Route path="/feedback" element={<Feedback />} /> {/* 🆕 Rota Pública de Feedback */}
 
         {/* ============================================== */}
         {/* === ROTAS DO ADMIN (Carregamento Preguiçoso) === */}
@@ -67,6 +70,8 @@ export default function App() {
                 <Route path="auditoria" element={<AdminAudit />} />
                 {/* /ies-admin/moments */}
                 <Route path="moments" element={<AdminMoments />} /> 
+                {/* /ies-admin/feedbacks */}
+                <Route path="feedbacks" element={<AdminFeedbacks />} /> {/* 🆕 Rota Admin de Feedbacks */}
             </Route>
         </Route>
       </Routes>
