@@ -48,7 +48,7 @@ const scrollbarStyle = `
 `;
 
 // ==========================================
-// 1. MODAL DE VISUALIZAÇÃO (PERFORMANCE OTIMIZADA)
+// 1. MODAL DE VISUALIZAÇÃO (PERFORMANCE MÁXIMA)
 // ==========================================
 function ViewModal({ feedback, onClose }: { feedback: Feedback | null, onClose: () => void }) {
     useEffect(() => {
@@ -73,15 +73,17 @@ function ViewModal({ feedback, onClose }: { feedback: Feedback | null, onClose: 
                 initial={{ opacity: 0 }} 
                 animate={{ opacity: 1 }} 
                 exit={{ opacity: 0 }}
+                transition={{ duration: 0.15 }} // Rápido
                 className="absolute inset-0 bg-black/80 backdrop-blur-sm" 
                 onClick={onClose} 
             />
             
             <motion.div
-                initial={{ opacity: 0, scale: 0.95, y: 10 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.95, y: 10 }}
-                transition={{ duration: 0.2 }}
+                // OTIMIZAÇÃO: Removido 'y'. Apenas Scale e Opacity é muito mais leve.
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                transition={{ duration: 0.15, ease: "easeOut" }}
                 className="relative bg-zinc-900 border border-zinc-700 rounded-2xl w-full max-w-lg shadow-2xl z-10 flex flex-col max-h-[85vh] overflow-hidden"
             >
                 <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-b from-orange-500/10 to-transparent pointer-events-none" />
@@ -138,7 +140,7 @@ function ViewModal({ feedback, onClose }: { feedback: Feedback | null, onClose: 
 }
 
 // ==========================================
-// 2. MODAL DE EXCLUSÃO (PERFORMANCE OTIMIZADA)
+// 2. MODAL DE EXCLUSÃO (PERFORMANCE MÁXIMA)
 // ==========================================
 interface ConfirmModalProps {
   open: boolean;
@@ -170,9 +172,11 @@ function DeleteModal({ open, onCancel, onConfirm, isLoading }: ConfirmModalProps
         onClick={onCancel} 
       />
       <motion.div
-        initial={{ opacity: 0, scale: 0.95, y: 10 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.95, y: 10 }}
+        // OTIMIZAÇÃO: Removido 'y'. Apenas Scale e Opacity.
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        exit={{ opacity: 0, scale: 0.95 }}
+        transition={{ duration: 0.15 }}
         className="relative bg-zinc-900 border border-zinc-700 rounded-2xl p-6 w-full max-w-sm shadow-2xl z-10"
       >
         <div className="flex flex-col items-center text-center gap-4">
@@ -305,7 +309,7 @@ export default function AdminFeedbacks() {
                 </button>
             </div>
 
-            {/* Lista com Animação OTIMIZADA (Igual AdminMoments) */}
+            {/* Lista com Animação OTIMIZADA */}
             {loading ? (
                 <div className="flex flex-col items-center justify-center h-64 text-zinc-500 gap-3">
                     <Loader2 className="w-8 h-8 animate-spin text-orange-500" />
@@ -333,9 +337,9 @@ export default function AdminFeedbacks() {
                                     <motion.div 
                                         key={item.id}
                                         layout
-                                        initial={{ opacity: 0, scale: 0.9 }}
+                                        initial={{ opacity: 0, scale: 0.95 }}
                                         animate={{ opacity: 1, scale: 1 }}
-                                        exit={{ opacity: 0, scale: 0.9 }}
+                                        exit={{ opacity: 0, scale: 0.95 }}
                                         transition={{ duration: 0.2 }}
                                         className={`group relative p-6 rounded-2xl border flex flex-col justify-between h-full transition-shadow hover:shadow-xl ${item.approved ? 'bg-zinc-900/80 border-green-500/20' : 'bg-zinc-900/50 border-zinc-800'}`}
                                     >
