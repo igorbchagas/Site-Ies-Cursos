@@ -1,5 +1,5 @@
-import { useState, useMemo, useEffect } from 'react';
-import { ArrowLeft, Image, Globe, ExternalLink, MonitorPlay, X, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react'; 
+import { useState, useMemo, useEffect, useRef } from 'react';
+import { ArrowLeft, Image, Globe, ExternalLink, MonitorPlay, X, ChevronLeft, ChevronRight, Loader2, Play, Instagram, Youtube, Video } from 'lucide-react'; 
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
@@ -18,10 +18,11 @@ const ACCENT_COLOR = "#ff5722";
 
 // Função auxiliar para identificar o tipo de mídia pela URL
 const getMediaType = (url: string) => {
+    if (!url) return 'internal';
     if (url.includes('youtube.com') || url.includes('youtu.be')) return 'youtube';
     if (url.includes('instagram.com')) return 'instagram';
     if (url.includes('tiktok.com')) return 'tiktok';
-    return 'other';
+    return 'internal'; 
 };
 
 // Função para pegar thumbnail do Youtube
@@ -39,6 +40,7 @@ const getYoutubeThumbnailUrl = (url: string): string | null => {
 // =========================================================================
 function MomentCard({ moment }: { moment: MomentEvent }) { 
     const [showModal, setShowModal] = useState(false);
+    const videoRef = useRef<HTMLVideoElement>(null);
     
     // Scroll Lock
     useEffect(() => {
@@ -64,12 +66,32 @@ function MomentCard({ moment }: { moment: MomentEvent }) {
       }
     }, [moment.event_date, moment.date]);
 
-    const mediaType = useMemo(() => getMediaType(moment.src), [moment.src]);
+    const mediaType = useMemo(() => {
+        if(moment.type === 'video') {
+            return getMediaType(moment.src);
+        }
+        return 'image';
+    }, [moment.src, moment.type]);
+    
     const youtubeThumbnail = useMemo(() => getYoutubeThumbnailUrl(moment.src), [moment.src]);
 
     const handleOpenExternal = () => {
         let url = moment.src.split('?')[0].split('#')[0];
         window.open(url, '_blank');
+    };
+
+    // Controle de Play/Pause no Hover do Card
+    const handleMouseEnter = () => {
+        if (mediaType === 'internal' && videoRef.current) {
+            videoRef.current.play().catch(() => {}); // Ignora erro se o navegador bloquear
+        }
+    };
+
+    const handleMouseLeave = () => {
+        if (mediaType === 'internal' && videoRef.current) {
+            videoRef.current.pause();
+            videoRef.current.currentTime = 0; // Volta para o começo (thumbnail)
+        }
     };
 
     return (
@@ -78,6 +100,8 @@ function MomentCard({ moment }: { moment: MomentEvent }) {
         <div 
           className="relative group bg-white rounded-xl shadow-lg overflow-hidden cursor-pointer transition-transform duration-300 hover:scale-[1.03] hover:shadow-2xl"
           onClick={() => setShowModal(true)}
+          onMouseEnter={handleMouseEnter}
+          onMouseLeave={handleMouseLeave}
         >
           <div className="relative w-full h-60 overflow-hidden bg-gray-100">
             {moment.type === 'image' ? (
@@ -88,36 +112,72 @@ function MomentCard({ moment }: { moment: MomentEvent }) {
                 loading="lazy"
               />
             ) : (
-              // Preview para Vídeos
-              <div className="w-full h-full relative flex items-center justify-center">
+              // === ÁREA DE PREVIEW DE VÍDEO ===
+              <div className="w-full h-full relative flex items-center justify-center bg-zinc-900">
+                
+                {/* 1. Youtube Thumbnail */}
                 {mediaType === 'youtube' && youtubeThumbnail ? (
-                    <img src={youtubeThumbnail} alt={moment.title} className="w-full h-full object-cover" />
+                    <img src={youtubeThumbnail} alt={moment.title} className="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-opacity" />
+                ) : mediaType === 'internal' ? (
+                    /* 2. Vídeo Interno (Upload) - Renderiza o próprio vídeo mudo */
+                    <video
+                        ref={videoRef}
+                        src={moment.src}
+                        className="w-full h-full object-cover"
+                        muted
+                        loop
+                        playsInline
+                        preload="metadata"
+                    />
                 ) : (
-                    <div className={`w-full h-full flex flex-col items-center justify-center text-white/80 gap-2
-                        ${mediaType === 'instagram' ? 'bg-gradient-to-tr from-yellow-400 via-red-500 to-purple-500' : ''}
+                    /* 3. Placeholder Bonito para Insta/TikTok (Sem API não dá pra pegar imagem) */
+                    <div className={`w-full h-full flex flex-col items-center justify-center text-white relative overflow-hidden
+                        ${mediaType === 'instagram' ? 'bg-gradient-to-tr from-yellow-400 via-red-500 to-purple-600' : ''}
                         ${mediaType === 'tiktok' ? 'bg-black' : ''}
-                        ${mediaType === 'other' ? 'bg-gray-800' : ''}
                     `}>
-                        <MonitorPlay size={48} />
-                        <span className="font-bold text-sm uppercase tracking-wider">{mediaType}</span>
+                        {/* Efeito de fundo */}
+                        <div className="absolute inset-0 bg-black/20" />
+                        
+                        <div className="relative z-10 flex flex-col items-center gap-2 transform group-hover:scale-110 transition-transform duration-300">
+                             {mediaType === 'instagram' && <Instagram size={48} />}
+                             {mediaType === 'tiktok' && (
+                                <svg width="48" height="48" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M19.589 6.686a4.793 4.793 0 0 1-3.77-4.245V2h-3.445v13.672a2.896 2.896 0 0 1-5.201 1.743l-.002-.001.002.001a2.895 2.895 0 0 1 3.183-4.51v-3.5a6.394 6.394 0 0 0-5.394 9.365 6.394 6.394 0 0 0 10.864-2.828v-6.6a8.347 8.347 0 0 0 4.77 1.621v-3.913a4.793 4.793 0 0 1-1.007-.364z"/>
+                                </svg>
+                             )}
+                             <span className="font-bold text-sm uppercase tracking-widest">{mediaType}</span>
+                        </div>
                     </div>
                 )}
                 
-                {/* Ícone de Play Overlay */}
-                <div className="absolute inset-0 bg-black/20 group-hover:bg-black/40 transition-colors flex items-center justify-center">
-                    <div className="p-4 rounded-full bg-white/20 backdrop-blur-sm text-white group-hover:scale-110 transition-transform shadow-lg">
-                        <MonitorPlay className="w-8 h-8" fill="currentColor" />
+                {/* Ícone de Play Overlay (Aparece em todos os vídeos) */}
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                    <div className={`p-4 rounded-full backdrop-blur-sm text-white transition-all duration-300 shadow-xl
+                        ${mediaType === 'internal' ? 'bg-black/20 group-hover:opacity-0' : 'bg-white/20 group-hover:scale-110'}
+                    `}>
+                        <Play className="w-8 h-8 ml-1" fill="currentColor" />
                     </div>
                 </div>
               </div>
             )}
             
-            {/* Tag do Tipo de Mídia */}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex items-end p-4 pointer-events-none">
-              <div className="flex items-center gap-2 text-white text-xs font-bold uppercase tracking-wide">
-                {moment.type === 'image' ? <Image className="w-4 h-4" /> : <Globe className="w-4 h-4" />}
-                {moment.type === 'image' ? 'Foto' : mediaType}
-              </div>
+            {/* Tag do Tipo de Mídia (Badge) */}
+            <div className="absolute top-3 left-3 flex items-center gap-2">
+               <span className={`text-[10px] font-bold uppercase tracking-wide px-2 py-1 rounded-md text-white shadow-sm backdrop-blur-md
+                    ${moment.type === 'image' ? 'bg-blue-500/80' : ''}
+                    ${mediaType === 'youtube' ? 'bg-red-600/90' : ''}
+                    ${mediaType === 'instagram' ? 'bg-pink-600/90' : ''}
+                    ${mediaType === 'tiktok' ? 'bg-black/60 border border-white/20' : ''}
+                    ${mediaType === 'internal' ? 'bg-emerald-600/90' : ''}
+               `}>
+                    <div className="flex items-center gap-1.5">
+                        {moment.type === 'image' && <><Image size={12}/> FOTO</>}
+                        {mediaType === 'youtube' && <><Youtube size={12}/> YOUTUBE</>}
+                        {mediaType === 'instagram' && <><Instagram size={12}/> INSTA</>}
+                        {mediaType === 'tiktok' && <>TIKTOK</>}
+                        {mediaType === 'internal' && <><Video size={12}/> VÍDEO</>}
+                    </div>
+               </span>
             </div>
           </div>
 
@@ -131,71 +191,82 @@ function MomentCard({ moment }: { moment: MomentEvent }) {
         {/* === MODAL / LIGHTBOX === */}
         {showModal && (
           <div 
-            className="fixed inset-0 bg-black/90 backdrop-blur-sm flex items-center justify-center z-[9999] p-4 md:p-8"
+            className="fixed inset-0 bg-black/95 backdrop-blur-md flex items-center justify-center z-[9999]"
             onClick={() => setShowModal(false)}
           >
-            {/* Container Central com Scroll Próprio */}
+            {/* Botão Fechar FIXADO na tela */}
+            <button 
+                onClick={(e) => { e.stopPropagation(); setShowModal(false); }}
+                className="fixed top-6 right-6 z-[10000] p-2 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors border border-white/10 hover:rotate-90 duration-300"
+            >
+                <X size={32} />
+            </button>
+
+            {/* Container Central */}
             <div 
-                className="w-full max-w-5xl max-h-[95vh] flex flex-col items-center relative overflow-y-auto no-scrollbar"
+                className="w-full h-full flex items-center justify-center p-4 md:p-10 overflow-auto"
                 onClick={(e) => e.stopPropagation()}
             >
-              {/* Botão Fechar */}
-              <button 
-                onClick={() => setShowModal(false)} 
-                className="absolute top-0 right-0 md:-right-4 md:top-0 text-white hover:text-gray-300 z-50 p-2 transition-colors bg-black/50 rounded-full md:bg-transparent"
-              >
-                <X size={32} />
-              </button>
-              
-              <div className="mt-10 md:mt-0 w-full flex flex-col items-center justify-center">
+              <div className="w-full max-w-5xl flex flex-col items-center justify-center gap-6">
                 
                 {moment.type === 'image' ? (
                   <img 
                     src={moment.src} 
                     alt={moment.title} 
-                    className="max-w-full max-h-[80vh] object-contain rounded-lg shadow-2xl" 
+                    className="max-w-full max-h-[85vh] object-contain rounded-lg shadow-2xl" 
                   />
                 ) : (
-                  // --- AREA DOS EMBEDS ---
+                  // --- ÁREA DE VÍDEOS NO MODAL ---
                   <div className="w-full flex flex-col items-center justify-center">
-                      <div className="w-full max-w-[500px] shadow-2xl rounded-xl overflow-hidden bg-black">
-                        
-                        {mediaType === 'youtube' && (
-                            <div className="aspect-video w-full">
-                                <YouTubeEmbed url={moment.src} width="100%" height="100%" />
-                            </div>
-                        )}
+                      
+                      {/* VÍDEO INTERNO (UPLOAD) */}
+                      {mediaType === 'internal' && (
+                         <div className="w-full max-w-4xl bg-black rounded-lg overflow-hidden shadow-2xl border border-white/10">
+                             <video 
+                                controls 
+                                autoPlay 
+                                className="w-full max-h-[80vh]"
+                                src={moment.src}
+                             >
+                                Seu navegador não suporta vídeos.
+                             </video>
+                         </div>
+                      )}
 
-                        {mediaType === 'instagram' && (
-                            <div className="flex justify-center bg-white">
-                                <InstagramEmbed url={moment.src} width={328} />
-                            </div>
-                        )}
+                      {/* EMBEDS EXTERNOS */}
+                      {mediaType !== 'internal' && (
+                        <div className="w-full max-w-[500px] shadow-2xl rounded-xl overflow-hidden bg-black flex justify-center">
+                            {mediaType === 'youtube' && (
+                                <div className="aspect-video w-full">
+                                    <YouTubeEmbed url={moment.src} width="100%" height="100%" />
+                                </div>
+                            )}
 
-                        {mediaType === 'tiktok' && (
-                            <div className="flex justify-center bg-black">
-                                <TikTokEmbed url={moment.src} width={325} />
-                            </div>
-                        )}
+                            {mediaType === 'instagram' && (
+                                <div className="bg-white rounded-xl overflow-hidden">
+                                    <InstagramEmbed url={moment.src} width={328} />
+                                </div>
+                            )}
 
-                        {mediaType === 'other' && (
-                             <div className="p-10 text-white text-center">
-                                <Globe size={48} className="mx-auto mb-4 opacity-50"/>
-                                <p>Conteúdo externo não incorporável.</p>
-                             </div>
-                        )}
-                      </div>
+                            {mediaType === 'tiktok' && (
+                                <div className="bg-black rounded-xl overflow-hidden">
+                                    <TikTokEmbed url={moment.src} width={325} />
+                                </div>
+                            )}
+                        </div>
+                      )}
                   </div>
                 )}
 
-                {moment.type !== 'image' && (
+                {/* Botão para link externo */}
+                {(moment.type !== 'image' && mediaType !== 'internal') && (
                     <button
                         onClick={handleOpenExternal}
-                        className="mt-6 px-6 py-3 rounded-full text-white font-bold flex items-center gap-2 transition-transform shadow-lg hover:brightness-110 active:scale-95"
+                        className="px-8 py-3 rounded-full text-white font-bold flex items-center gap-2 transition-all shadow-lg hover:brightness-110 active:scale-95 hover:shadow-orange-500/20"
                         style={{ backgroundColor: ACCENT_COLOR }}
                     >
                         <ExternalLink size={18} />
-                        Ir para a publicação original
+                        Abrir publicação original
                     </button>
                 )}
               </div>
@@ -344,7 +415,7 @@ export default function MomentsPage() {
 
               {/* MOBILE: Mostra texto "Pág X de Y" */}
               <span className="md:hidden text-sm font-semibold text-gray-600">
-                 {currentPage} / {totalPages}
+                  {currentPage} / {totalPages}
               </span>
 
               {/* DESKTOP: Mostra números das páginas */}

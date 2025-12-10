@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo, useCallback } from "react";
 import { createPortal } from "react-dom"; 
-import { Trash, Upload, Camera, RefreshCcw, MonitorPlay, Maximize, AlertTriangle, Globe, Trash2, Loader2, Calendar, Search, Filter } from "lucide-react"; 
+import { Trash, Upload, Camera, RefreshCcw, MonitorPlay, Maximize, AlertTriangle, Globe, Trash2, Loader2, Calendar, Search, Filter, FileVideo } from "lucide-react"; 
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import { Moment } from "../../types";
@@ -11,7 +11,7 @@ const ACCENT_COLOR = "#F27A24";
 const DARK_BACKGROUND = "#18181B"; 
 const DARK_SHADE = "#27272A"; 
 const TEXT_COLOR = "#FAFAFA"; 
-const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
+const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20 MB - Ajuste conforme necessário
 const BUCKET_NAME = "images"; 
 
 // =========================================================================
@@ -263,6 +263,14 @@ export default function AdminMoments() {
                 return;
             }
             
+            // Verifica se é imagem ou vídeo
+            if (!file.type.startsWith('image/') && !file.type.startsWith('video/')) {
+                 toast.error("Formato inválido. Apenas imagens e vídeos são permitidos.");
+                 setNewFile(null);
+                 e.target.value = '';
+                 return;
+            }
+            
             setNewFile(file);
             setNewVideoUrl('');
             setErrorFileOrUrl(false);
@@ -315,6 +323,13 @@ export default function AdminMoments() {
         try {
             if (uploadType === 'file' && newFile) {
                 fileSize = newFile.size;
+                
+                // DETECTA SE É VÍDEO
+                if (newFile.type.startsWith('video/')) {
+                    finalType = 'video';
+                } else {
+                    finalType = 'image';
+                }
 
                 const fileExt = newFile.name.split('.').pop();
                 const cleanName = newFile.name.replace(/[^a-zA-Z0-9]/g, '_');
@@ -379,24 +394,22 @@ export default function AdminMoments() {
         setIsDeleting(true);
 
         try {
-            // 1. TENTA REMOVER DO STORAGE (Se for imagem)
-            if (momentToDelete.type === 'image' && momentToDelete.src) {
+            // 1. TENTA REMOVER DO STORAGE (Se for upload interno - imagem ou vídeo)
+            // Verificamos se a URL pertence ao bucket do projeto
+            if (momentToDelete.src && momentToDelete.src.includes(`/${BUCKET_NAME}/`)) {
                  try {
-                    // VERIFICA SE A URL É DO SUPABASE (contém o nome do bucket)
-                    if (momentToDelete.src.includes(`/${BUCKET_NAME}/`)) {
-                        const parts = momentToDelete.src.split(`/${BUCKET_NAME}/`);
-                        if (parts.length > 1) {
-                            const storagePath = decodeURIComponent(parts[1]);
-                            
-                            const { error: storageError } = await supabase.storage
-                                .from(BUCKET_NAME) 
-                                .remove([storagePath]);
+                    const parts = momentToDelete.src.split(`/${BUCKET_NAME}/`);
+                    if (parts.length > 1) {
+                        const storagePath = decodeURIComponent(parts[1]);
+                        
+                        const { error: storageError } = await supabase.storage
+                            .from(BUCKET_NAME) 
+                            .remove([storagePath]);
 
-                            if (storageError) {
-                                console.warn("Aviso: Falha ao remover do Storage (continuando com o DB):", storageError.message);
-                            } else {
-                                console.log("Arquivo deletado do Storage com sucesso.");
-                            }
+                        if (storageError) {
+                            console.warn("Aviso: Falha ao remover do Storage (continuando com o DB):", storageError.message);
+                        } else {
+                            console.log("Arquivo deletado do Storage com sucesso.");
                         }
                     }
                 } catch (e) {
@@ -433,7 +446,7 @@ export default function AdminMoments() {
                 </div>
                 <div>
                     <h1 className={`text-xl font-bold`} style={{ color: TEXT_COLOR }}>Gerenciar Galeria</h1>
-                    <span className="text-sm text-zinc-400">{moments.length} foto(s) na galeria</span>
+                    <span className="text-sm text-zinc-400">{moments.length} momento(s) na galeria</span>
                 </div>
             </div>
 
@@ -449,7 +462,7 @@ export default function AdminMoments() {
                         className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg text-sm font-semibold transition-colors ${uploadType === 'file' ? `bg-[${ACCENT_COLOR}] text-white` : 'bg-zinc-700 text-zinc-200 hover:bg-zinc-600'}`}
                         disabled={storageUsage.isFull}
                     >
-                        <Maximize size={16} /> Upload de Imagem
+                        <Maximize size={16} /> Upload Arquivo (Foto/Vídeo)
                     </button>
                     <button
                         onClick={() => handleSetUploadType('url')}
@@ -463,12 +476,12 @@ export default function AdminMoments() {
                     {uploadType === 'file' ? (
                         <div className="flex flex-col gap-1">
                             <label className="text-xs font-semibold text-zinc-400 uppercase tracking-wide">
-                                {newFile ? 'Arquivo selecionado' : 'Selecione a Imagem (Obrigatório)'}
+                                {newFile ? 'Arquivo selecionado' : 'Selecione Foto ou Vídeo (Obrigatório)'}
                             </label>
                             <input
                                 type="file"
                                 id="file-input"
-                                accept="image/*" 
+                                accept="image/*,video/mp4,video/webm,video/quicktime" 
                                 onChange={handleFileChange}
                                 disabled={storageUsage.isFull}
                                 className={`w-full text-sm text-[${TEXT_COLOR}] file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-zinc-700 file:text-white hover:file:bg-zinc-600 ${storageUsage.isFull ? 'cursor-not-allowed' : ''}`}
@@ -660,11 +673,14 @@ export default function AdminMoments() {
                                                 className="w-full h-full object-cover"
                                                 loading="lazy"
                                             />
-                                        ) : (
-                                            <div className="w-full h-full flex items-center justify-center text-white/50">
-                                                <MonitorPlay size={32} />
+                                         ) : (
+                                            <div className="w-full h-full flex items-center justify-center text-white/50 bg-black/40">
+                                                <div className="flex flex-col items-center gap-1">
+                                                    <FileVideo size={32} />
+                                                    <span className="text-[10px]">VÍDEO</span>
+                                                </div>
                                             </div>
-                                        )}
+                                         )}
                                         <div className="absolute top-2 right-2 bg-black/60 text-white text-[10px] px-2 py-0.5 rounded capitalize">
                                             {moment.category}
                                         </div>
@@ -686,7 +702,7 @@ export default function AdminMoments() {
                                             onClick={() => requestDelete(moment)}
                                             className="mt-2 w-full py-2 bg-red-900/20 text-red-400 border border-red-900/50 rounded flex items-center justify-center gap-2 text-xs font-semibold active:bg-red-900/40"
                                         >
-                                            <Trash2 size={14} /> Excluir Foto
+                                            <Trash2 size={14} /> Excluir
                                         </button>
                                     </div>
                                 </div>
@@ -714,8 +730,10 @@ export default function AdminMoments() {
                                                 loading="lazy"
                                             />
                                         ) : (
-                                            <div className="w-full h-full flex items-center justify-center text-white/50">
-                                                <MonitorPlay size={32} />
+                                            <div className="w-full h-full flex items-center justify-center text-white/50 bg-zinc-900">
+                                                 <div className="flex flex-col items-center gap-2">
+                                                    <FileVideo size={40} className="opacity-50" />
+                                                </div>
                                             </div>
                                         )}
 
@@ -727,7 +745,7 @@ export default function AdminMoments() {
                                                 <button
                                                     onClick={() => requestDelete(moment)}
                                                     className="p-1.5 bg-red-600 rounded-full text-white hover:bg-red-700 transition shadow-lg"
-                                                    title="Excluir Foto"
+                                                    title="Excluir"
                                                 >
                                                     <Trash size={14} />
                                                 </button>

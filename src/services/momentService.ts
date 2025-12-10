@@ -1,5 +1,3 @@
-// src/services/momentService.ts
-
 import { supabase } from "../lib/supabaseClient";
 import { Moment } from "../types";
 
@@ -100,17 +98,17 @@ export const momentService = {
 
     /**
      * CÁLCULO REAL DO STORAGE
-     * Soma a coluna 'size_bytes' de todas as imagens.
+     * Soma a coluna 'size_bytes' de imagens E vídeos.
      */
     async getStorageUsage(): Promise<StorageUsage> {
         const total = 50; // Limite de 50 MB
 
         try {
-            // Busca apenas a coluna de tamanho para imagens
+            // Busca apenas a coluna de tamanho para imagens E vídeos
             const { data, error } = await supabase
                 .from(MOMENTS_TABLE)
                 .select('size_bytes')
-                .eq('type', 'image');
+                .in('type', ['image', 'video']); // Inclui vídeo na conta
 
             if (error) {
                 console.warn("WARN: Falha ao calcular uso do storage.");
