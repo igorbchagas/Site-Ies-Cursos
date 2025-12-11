@@ -4,7 +4,8 @@ import { Course } from "../types";
 // ================================================
 // CONFIGURAÇÃO
 // ================================================
-const BUCKET_NAME = "course-images";
+// ATENÇÃO: O nome deve ser IDÊNTICO ao do seu bucket no Supabase
+const BUCKET_NAME = "course-images"; 
 
 // ================================================
 // MAPEAMENTO BANCO → FRONT 
@@ -28,7 +29,7 @@ function mapRowToCourse(row: any): Course {
     imageUrl: row.image ?? "", 
     active: row.active ?? true,
     isFeatured: row.featured ?? false,
-    workload: undefined,
+    workload: row.workload ?? "", // Corrigido para pegar workload se existir
     category: row.category ?? "",
   };
 }
@@ -52,17 +53,19 @@ function mapCourseToRow(course: Partial<Course>) {
     active: course.active,
     featured: course.isFeatured,
     category: course.category,
+    workload: course.workload,
   };
 }
 
 export const courseService = {
   // 🔹 Upload de Imagem
   uploadImage: async (file: File): Promise<string> => {
-    // Sanitiza o nome do arquivo para evitar caracteres especiais
+    // Sanitiza o nome do arquivo
     const fileExt = file.name.split('.').pop();
     const cleanName = file.name.replace(/[^a-zA-Z0-9]/g, '_');
     const fileName = `${Date.now()}_${cleanName}.${fileExt}`;
-    const filePath = `${fileName}`;
+    // Podemos usar pastas se quiser organizar melhor: `cursos/${fileName}`
+    const filePath = fileName; 
 
     const { error: uploadError } = await supabase.storage
       .from(BUCKET_NAME)
@@ -82,26 +85,41 @@ export const courseService = {
     return data.publicUrl;
   },
 
-  // 🔹 Deletar Imagem do Bucket
+  // 🔹 Deletar Imagem do Bucket (Função Melhorada)
   deleteImageFromUrl: async (fullUrl: string): Promise<void> => {
-    try {
-      // Extrai o caminho do arquivo da URL completa
-      // Ex: https://.../storage/v1/object/public/course-images/arquivo.jpg -> arquivo.jpg
-      const urlParts = fullUrl.split(`/${BUCKET_NAME}/`);
-      if (urlParts.length < 2) return; // Não é uma imagem do nosso bucket
+    if (!fullUrl) return;
 
-      const filePath = decodeURIComponent(urlParts[1]);
+    try {
+      // 1. Verifica se a imagem pertence ao nosso bucket
+      if (!fullUrl.includes(`/${BUCKET_NAME}/`)) {
+          console.warn("Tentativa de deletar imagem externa ou de outro bucket:", fullUrl);
+          return;
+      }
+
+      // 2. Extrai o caminho relativo (após o nome do bucket)
+      const urlParts = fullUrl.split(`/${BUCKET_NAME}/`);
+      if (urlParts.length < 2) return;
+
+      // 3. Limpa query params (ex: ?t=123) e decodifica espaços (%20)
+      // Isso é crucial, senão o Supabase não acha o arquivo
+      let filePath = urlParts[1].split('?')[0]; 
+      filePath = decodeURIComponent(filePath);
+
+      console.log(`Tentando deletar arquivo: ${filePath} do bucket: ${BUCKET_NAME}`);
 
       const { error } = await supabase.storage
         .from(BUCKET_NAME)
         .remove([filePath]);
 
       if (error) {
-        console.error("Erro ao deletar imagem do storage:", error);
+        console.error("Erro Supabase Storage:", error);
         throw new Error("Falha ao remover arquivo do servidor.");
       }
+      
+      console.log("Arquivo removido com sucesso do bucket.");
     } catch (error) {
       console.error("Erro ao processar exclusão de imagem:", error);
+      // Não damos throw aqui para não travar a UI se a imagem já não existia
     }
   },
 
@@ -155,19 +173,21 @@ export const courseService = {
     return mapRowToCourse(updated);
   },
 
-  // 🔹 Remover Curso
+  // 🔹 Remover Curso (E sua imagem)
   remove: async (id: string): Promise<void> => {
-    // Primeiro buscamos o curso para ver se tem imagem para deletar
+    // 1. Busca o curso para pegar a URL da imagem antes de deletar o registro
     const { data: course } = await supabase
       .from("courses")
       .select("image")
       .eq("id", id)
       .single();
 
+    // 2. Se tiver imagem, deleta do bucket
     if (course?.image) {
        await courseService.deleteImageFromUrl(course.image);
     }
 
+    // 3. Deleta o registro do banco
     const { error } = await supabase
       .from("courses")
       .delete()
@@ -203,8 +223,9 @@ export const courseService = {
       id: undefined,
       name: course.name + " (Cópia)",
       slug: `${course.slug}-copia-${Date.now()}`,
-      // Nota: Mantemos a mesma URL de imagem. Se deletar a imagem de um, deleta do outro se for a mesma URL.
-      // O ideal seria copiar o arquivo no bucket, mas para simplificar vamos manter a referência.
+      // Nota: Mantém a mesma URL. Não duplicamos o arquivo físico para economizar espaço.
+      // Se um for deletado, o ideal seria não deletar a imagem se ela for usada por outro, 
+      // mas para este sistema simples, assumimos gestão manual.
     };
 
     const row = mapCourseToRow(clone);
