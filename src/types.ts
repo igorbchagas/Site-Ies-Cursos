@@ -23,6 +23,7 @@ export interface Course {
 
   // Imagem
   imageUrl: string; // image no banco
+  category?: string;
 
   // Flags
   active: boolean; // active
