@@ -1,6 +1,7 @@
-import React, { Suspense } from "react"; // Importar React e Suspense
-import { Routes, Route } from "react-router-dom";
+import React, { Suspense, useEffect } from "react"; // Importar React e Suspense
+import { Routes, Route, useLocation } from "react-router-dom";
 import { Toaster } from "sonner"; 
+import Lenis from '@studio-freight/lenis';
 
 import Home from "./pages/Home";
 import AllCourses from "./pages/AllCourses";
@@ -20,6 +21,51 @@ import ProtectedRoute from "./components/ProtectedRoute";
 // Rota de Login (Precisa ser carregada antes do dashboard)
 const AdminLogin = React.lazy(() => import("./pages/admin/AdminLogin"));
 
+// 1. GERENCIADOR DE SCROLL (LENIS)
+const ScrollManager = () => {
+  const { pathname } = useLocation();
+
+  useEffect(() => {
+    // 1. Desativa a restauração automática do navegador para não brigar com o código
+    if ('scrollRestoration' in window.history) {
+      window.history.scrollRestoration = 'manual';
+    }
+
+    // 2. Inicializa o Lenis (Apenas uma vez)
+    const lenis = new Lenis({
+      duration: 1.2,
+      easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+      smoothWheel: true,
+    });
+
+    // Função de animação
+    function raf(time: number) {
+      lenis.raf(time);
+      requestAnimationFrame(raf);
+    }
+    requestAnimationFrame(raf);
+
+    // Guardamos a instância no window para acessar no outro useEffect se necessário
+    (window as any).lenis = lenis;
+
+    return () => {
+      lenis.destroy();
+    };
+  }, []); // Array vazio = Roda apenas quando o site abre
+
+  useEffect(() => {
+    // 3. Toda vez que o pathname mudar, joga o scroll para o topo
+    window.scrollTo(0, 0);
+    
+    const lenis = (window as any).lenis;
+    if (lenis) {
+      lenis.scrollTo(0, { immediate: true });
+    }
+  }, [pathname]); // Roda toda vez que você mudar de página
+
+  return null;
+};
+
 // Layout e Componentes Internos do Painel Admin
 const AdminLayout = React.lazy(() => import("./pages/admin/AdminLayout"));
 const AdminDashboard = React.lazy(() => import("./pages/admin/AdminDashboard"));
@@ -35,6 +81,7 @@ const AdminFeedbacks = React.lazy(() => import("./pages/admin/AdminFeedbacks"));
 export default function App() {
   return (
     <>
+    <ScrollManager />
       <Routes>
         {/* === ROTAS PÚBLICAS (Carregamento Imediato) === */}
         <Route path="/" element={<Home />} />
